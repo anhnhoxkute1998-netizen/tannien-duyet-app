@@ -1,0 +1,1597 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Duyệt Tân Niên</title>
+  <meta name="theme-color" content="#1E7A4A">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <!-- iOS mở từ màn hình chính dạng app -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Duyệt Tân Niên">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #1E7A4A; --primary-dark: #155C37; --cream: #F2C230;
+      --ok: #456140; --ok-bg: #eaf0e5; --err: #c0392b; --err-bg: #fdecea;
+      --warn: #b06a00; --warn-bg: #fdf3e2;
+      --border: #d9dee7; --muted: #6b7280; --bg: #f2f5ef; --card: #ffffff; --radius: 12px;
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--primary); }
+    html, body {
+      margin: 0; padding: 0; background: var(--bg); color: #1f2430;
+      font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.55; -webkit-text-size-adjust: 100%;
+    }
+    /* Chừa vùng an toàn tai thỏ/Dynamic Island (máy không có thì = 0) — nội dung không chui dưới đồng hồ */
+    body { padding-top: env(safe-area-inset-top); min-height: 100%; }
+    /* Dải nền xanh rêu phủ đúng vùng an toàn phía trên */
+    body::before {
+      content: ''; position: fixed; top: 0; left: 0; right: 0;
+      height: env(safe-area-inset-top); background: var(--primary); z-index: 5;
+    }
+    .wrap { max-width: 520px; margin: 0 auto; padding: 16px 14px 40px; }
+    .card { background: var(--card); border-radius: var(--radius); padding: 18px 16px; box-shadow: 0 1px 3px rgba(20,30,60,.08); }
+    .hero {
+      margin: -18px -16px 16px; padding: 26px 16px 18px; background: var(--primary);
+      border-radius: var(--radius) var(--radius) 0 0; text-align: center; color: var(--cream);
+    }
+    .hero-ten { font-weight: 800; font-size: 24px; letter-spacing: 1.5px; line-height: 1.15; }
+    .hero-script { font-family: 'Dancing Script', cursive; font-size: 26px; margin-top: 2px; }
+    .hero-sub { font-size: 13px; margin-top: 6px; opacity: .9; letter-spacing: .5px; }
+    label.lbl { display: block; font-weight: 600; font-size: 14.5px; margin-bottom: 7px; }
+    input[type=password], input[type=text], input[type=number] {
+      width: 100%; min-height: 48px; border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 12px 13px; font-size: 16px; font-family: inherit; background: #fff; color: inherit;
+    }
+    input:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
+    .btn { width: 100%; min-height: 48px; border: none; border-radius: var(--radius); font-size: 16px; font-weight: 700; font-family: inherit; cursor: pointer; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:disabled { background: #8fbfa5; cursor: not-allowed; }
+    .btn-ghost { background: #fff; color: var(--primary); border: 1px solid var(--primary); }
+    .btn-sm { min-height: 42px; font-size: 14px; }
+    .field { margin-top: 16px; }
+    .topbar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .topbar h3 { margin: 0; font-size: 17px; color: var(--primary); flex: 1; }
+    .count { font-size: 13px; color: var(--muted); }
+    .ticket { border: 1px solid var(--border); border-radius: var(--radius); padding: 13px 14px; margin-bottom: 12px; }
+    .ticket .who { font-weight: 700; font-size: 16px; }
+    .ticket .sub { font-size: 12.5px; color: var(--muted); margin-top: 1px; }
+    .bu { margin-top: 9px; background: var(--ok-bg); border: 1px solid #c9d8c2; border-radius: 10px; padding: 9px 11px; font-size: 14px; }
+    .bu b { color: var(--primary-dark); }
+    .bu-warn { margin-top: 9px; background: var(--warn-bg); border: 1px solid #f0d9a8; border-radius: 10px; padding: 9px 11px; font-size: 13.5px; color: var(--warn); }
+    .note { margin-top: 8px; font-size: 13.5px; color: #333; white-space: pre-wrap; }
+    .note .k { color: var(--muted); }
+    .links { margin-top: 8px; font-size: 13.5px; }
+    .links a { color: var(--primary); font-weight: 600; }
+    .acts { display: flex; gap: 8px; margin-top: 12px; }
+    .acts .btn { flex: 1; }
+    .btn-approve { background: var(--primary); color: #fff; }
+    .btn-reject { background: #fff; color: var(--err); border: 1px solid #f5c6c0; }
+    .box { border-radius: var(--radius); padding: 11px 13px; font-size: 14.5px; margin-top: 12px; display: none; }
+    .box.ok { background: var(--ok-bg); color: var(--ok); border: 1px solid #c9d8c2; }
+    .box.err { background: var(--err-bg); color: var(--err); border: 1px solid #f5c6c0; }
+    .empty { text-align: center; color: var(--muted); padding: 26px 10px; font-size: 15px; }
+    .hint { font-size: 12.5px; color: var(--muted); margin-top: 8px; }
+    /* ===== Tab Duyệt / Hôm nay / Tính lương / Nhân viên ===== */
+    .tabbar { display: none; gap: 6px; margin-bottom: 12px; }
+    .tab {
+      flex: 1; min-width: 0; min-height: 44px; padding: 0 3px; white-space: nowrap;
+      border-radius: var(--radius); font-family: inherit;
+      /* 4 tab vẫn đủ chỗ trên iPhone SE 375px (~11.8px), máy rộng thì về 15px như cũ */
+      font-size: clamp(11.5px, 3.15vw, 15px);
+      font-weight: 700; cursor: pointer; background: #fff; color: var(--primary); border: 1px solid var(--primary);
+    }
+    .tab.on { background: var(--primary); color: #fff; }
+    /* ===== Màn Tính lương ===== */
+    .range { display: flex; gap: 10px; }
+    .range .f { flex: 1; }
+    input[type=date], input[type=time] {
+      width: 100%; min-height: 48px; border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 10px 12px; font-size: 16px; font-family: inherit; background: #fff; color: inherit;
+      /* iOS Safari đời cũ bóp input date/time theo kích thước mặc định khi chưa nhập */
+      -webkit-appearance: none; appearance: none; display: block; min-width: 100%;
+    }
+    /* Khối "Sửa giờ rồi duyệt" trên thẻ ticket */
+    .sua-link { margin-top: 8px; font-size: 13.5px; }
+    .sua-link a { color: var(--primary); font-weight: 600; }
+    .sua { margin-top: 10px; background: #f4f8f4; border: 1px dashed var(--border); border-radius: 10px; padding: 10px 11px; }
+    /* ===== Màn Hôm nay ===== */
+    .hnSec { margin-top: 14px; font-weight: 700; font-size: 14.5px; }
+    .hnSec.xanh { color: var(--ok); }
+    .hnSec.do { color: var(--err); }
+    .hnSec.xam { color: var(--muted); }
+    .hnrow {
+      display: flex; gap: 8px; align-items: baseline; font-size: 14px;
+      padding: 8px 0; border-bottom: 1px dashed var(--border);
+    }
+    .hnrow .ten { font-weight: 600; flex: 1; }
+    .hnrow .ca2 { color: var(--muted); font-size: 12.5px; }
+    .hnrow .gio2 { text-align: right; white-space: nowrap; }
+    .chips { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .chip {
+      border: 1px solid var(--primary); background: #fff; color: var(--primary); border-radius: 999px;
+      padding: 7px 14px; font-size: 13.5px; font-weight: 600; font-family: inherit; cursor: pointer;
+    }
+    .tong {
+      margin-top: 14px; background: var(--ok-bg); border: 1px solid #c9d8c2; border-radius: 10px;
+      padding: 11px 13px; font-size: 15px;
+    }
+    .warntxt { color: var(--warn); font-weight: 600; }
+    .cb { margin-top: 6px; }
+    .cb summary { cursor: pointer; }
+    .cb .cbrow { padding: 7px 0 2px; margin-top: 5px; border-top: 1px dashed rgba(0,0,0,.15); font-size: 13.5px; }
+    .cb .cbly { color: var(--warn); font-size: 12.5px; }
+    details.nv { border: 1px solid var(--border); border-radius: var(--radius); margin-top: 10px; padding: 0 12px; }
+    details.nv summary {
+      list-style: none; cursor: pointer; padding: 12px 0;
+      display: grid; grid-template-columns: 1fr auto; row-gap: 2px; align-items: center;
+    }
+    details.nv summary::-webkit-details-marker { display: none; }
+    .nv .who { font-weight: 700; font-size: 15.5px; }
+    .nv .money { font-weight: 800; color: var(--primary-dark); text-align: right; }
+    .nv .sub2 { font-size: 12.5px; color: var(--muted); }
+    .nv .gio { font-size: 12.5px; color: var(--muted); text-align: right; }
+    .ctrow { display: flex; gap: 8px; font-size: 13.5px; padding: 7px 0; border-top: 1px dashed var(--border); }
+    .ctrow .d { min-width: 44px; color: var(--muted); }
+    .ctrow .c { flex: 1; }
+    .ctrow .h { width: 104px; text-align: right; }
+    .ctrow .g { width: 46px; text-align: right; font-weight: 600; }
+    .ctrow.loi { color: var(--err); }
+    .ctghi { font-size: 12.5px; color: var(--warn); padding: 0 0 7px; }
+    .ctghi.nhe { color: var(--muted); }
+    /* ===== Màn Nhân viên (v10.0) ===== */
+    .nvx-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 0 13px; margin-bottom: 10px; }
+    .nvx-card.off { opacity: .55; }
+    .nvx-head { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 12px 0; cursor: pointer; }
+    .nvx-ten { font-weight: 700; font-size: 15.5px; }
+    .nvx-sub { font-size: 12.5px; color: var(--muted); }
+    .nvx-badge { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+    .nvx-badge.lam { background: var(--ok-bg); color: var(--ok); border: 1px solid #c9d8c2; }
+    .nvx-badge.nghi { background: #eef0f3; color: var(--muted); border: 1px solid var(--border); }
+    .nvx-act { border-top: 1px dashed var(--border); padding: 12px 0 14px; }
+    .nvx-act .btn { margin-top: 10px; }
+    .nvx-lbl { display: block; font-weight: 600; font-size: 13.5px; margin-bottom: 6px; }
+    /* KHÔNG dùng appearance:none cho select — iOS mất mũi tên dropdown */
+    select.nvx-sel {
+      width: 100%; min-height: 48px; border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 10px 12px; font-size: 16px; font-family: inherit; background: #fff; color: inherit;
+    }
+    /* Hàng nút riêng — KHÔNG dùng class .acts (lockActs của tab Duyệt quét .acts .btn) */
+    .nvx-row { display: flex; gap: 8px; margin-top: 12px; }
+    .nvx-row .btn { flex: 1; margin-top: 0; }
+    .nvx-pin { background: var(--ok-bg); border: 1px solid #c9d8c2; border-radius: var(--radius); padding: 14px 13px; margin-bottom: 12px; text-align: center; }
+    .nvx-pin-lbl { font-size: 14px; color: var(--ok); }
+    .nvx-pin-so { font-size: 40px; font-weight: 800; letter-spacing: 8px; color: var(--primary-dark); line-height: 1.3; }
+    .nvx-pin-note { font-size: 13px; color: var(--ok); margin-bottom: 10px; }
+    .nvx-vt { display: flex; gap: 10px; align-items: baseline; font-size: 14px; padding: 9px 0; border-bottom: 1px dashed var(--border); }
+    .nvx-vt .ten2 { font-weight: 600; flex: 1; }
+    .nvx-vt .gia { white-space: nowrap; }
+    .nvx-vt a { color: var(--primary); font-weight: 600; font-size: 13.5px; }
+    .nvx-sec { margin-top: 22px; font-size: 17px; font-weight: 700; color: var(--primary); }
+    /* ===== v12: số dư chi trả trên thẻ NV + sổ chi + khu Chốt kỳ (class mới, không đụng style cũ) ===== */
+    .nvx-sd { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+    .nvx-sd b { color: #1f2430; font-weight: 700; }
+    .nvx-sd-cho { opacity: .7; }
+    .nvx-conlai { display: block; margin-top: 2px; font-size: 14px; font-weight: 800; color: var(--primary-dark); }
+    .nvx-conlai.am { color: var(--err); }
+    .nvx-conlai.khong { color: var(--muted); }
+    .nvx-so { margin-top: 12px; }
+    .nvx-so .r { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; font-size: 13.5px; padding: 8px 0; border-top: 1px dashed var(--border); }
+    .nvx-so .r.huy { opacity: .5; text-decoration: line-through; }
+    .nvx-so .r .n { min-width: 98px; color: var(--muted); }
+    .nvx-so .r .l { font-weight: 600; }
+    .nvx-so .r .s { margin-left: auto; font-weight: 700; white-space: nowrap; }
+    .nvx-so .r .gc { width: 100%; font-size: 12.5px; color: var(--muted); }
+    /* nút Hủy nằm trong hàng — .btn mặc định width:100% và .nvx-act .btn có margin-top, phải bóp lại */
+    .nvx-so .r .btn { width: auto; min-height: 34px; padding: 0 12px; font-size: 13px; margin-top: 0; }
+    .ck-row { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; font-size: 14px; padding: 9px 0; border-bottom: 1px dashed var(--border); }
+    .ck-row .ky2 { font-weight: 700; flex: 1; }
+    .ck-row .tien2 { white-space: nowrap; font-weight: 700; color: var(--primary-dark); }
+    .ck-row .luc2 { width: 100%; font-size: 12px; color: var(--muted); }
+    /* ===== v13: DẢI TỔNG QUAN (trên đầu vùng nội dung, hiện ở mọi tab) ===== */
+    .tq { display: none; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
+    .tq-o {
+      min-height: 58px; padding: 7px 2px; border-radius: var(--radius); font-family: inherit; cursor: pointer;
+      background: var(--card); border: 1px solid var(--border); color: inherit; text-align: center; line-height: 1.35;
+    }
+    .tq-o .tq-so { display: block; font-weight: 800; font-size: 17px; color: var(--primary-dark); }
+    .tq-o .tq-nh { display: block; font-size: clamp(10.5px, 2.9vw, 12.5px); color: var(--muted); white-space: nowrap; }
+    .tq-o.do .tq-so { color: var(--err); }
+    /* nhãn "đang cập nhật..." cạnh nút Tải lại (cache phiên) */
+    .dangcn { font-size: 12px; color: var(--muted); white-space: nowrap; }
+    /* ===== v13: ảnh chấm công inline trong thẻ ticket ===== */
+    .anh-xem { display: block; margin-top: 8px; max-width: 100%; border-radius: 10px; cursor: pointer; }
+    /* ===== v13: khu Quản trị cuối tab Nhân viên ===== */
+    .qt-nk { margin-top: 6px; }
+    .qt-nk .r2 { font-size: 13px; padding: 7px 0; border-top: 1px dashed var(--border); }
+    .qt-nk .r2 .n2 { color: var(--muted); margin-right: 6px; }
+    .qt-nk .r2 .h2x { font-weight: 600; }
+    /* ===== Màn hình chờ — che nhịp render đầu, ẩn ngay khi UI sẵn sàng ===== */
+    .splash {
+      position: fixed; inset: 0; background: var(--primary); z-index: 10;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      transition: opacity .35s; line-height: 1.5;
+    }
+    .splash.hide { opacity: 0; pointer-events: none; }
+    .splash .logo { color: var(--cream); font-weight: 800; font-size: 32px; letter-spacing: 3px; }
+    .splash .sub { color: var(--cream); opacity: .85; font-size: 15px; }
+    .splash .spin {
+      width: 30px; height: 30px; border-radius: 50%;
+      border: 3px solid rgba(242, 194, 48, .3); border-top-color: var(--cream);
+      animation: quay .9s linear infinite;
+    }
+    @keyframes quay { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="splash" id="splash">
+    <div class="logo">TÂN NIÊN</div>
+    <div class="spin"></div>
+    <div class="sub">Đang mở trang duyệt...</div>
+  </div>
+
+  <div class="wrap">
+    <!-- ===== MÀN KHÓA ===== -->
+    <div id="lock" class="card">
+      <div class="hero">
+        <div class="hero-ten">TÂN NIÊN 2000</div>
+        <div class="hero-script">Tiệm cà phê</div>
+        <div class="hero-sub">Trang duyệt chấm công</div>
+      </div>
+      <div class="field">
+        <label class="lbl" for="mk">Mã duyệt <span style="color:var(--err)">*</span></label>
+        <input id="mk" type="password" inputmode="numeric" autocomplete="off" placeholder="Nhập mã duyệt">
+      </div>
+      <div class="field">
+        <button type="button" class="btn btn-primary" id="btnOpen" onclick="doOpen()">Mở trang duyệt</button>
+      </div>
+      <div id="lockBox" class="box"></div>
+    </div>
+
+    <!-- ===== TAB CHUYỂN MÀN (hiện sau khi mở khóa) ===== -->
+    <div id="tabs" class="tabbar">
+      <button type="button" class="tab on" id="tabTicket" onclick="moTab('ticket')">Duyệt</button>
+      <button type="button" class="tab" id="tabHomNay" onclick="moTab('homnay')">Hôm nay</button>
+      <button type="button" class="tab" id="tabLuong" onclick="moTab('luong')">Tính lương</button>
+      <button type="button" class="tab" id="tabNhanVien" onclick="moTab('nhanvien')">👥 Nhân viên</button>
+    </div>
+
+    <!-- ===== DẢI TỔNG QUAN (v13) — hiện ở MỌI tab, bấm ô để nhảy tab ===== -->
+    <div id="tongquan" class="tq">
+      <button type="button" class="tq-o" onclick="moTab('homnay')"><span class="tq-so" id="tqDang">—</span><span class="tq-nh">🟢 đang ca</span></button>
+      <button type="button" class="tq-o do" onclick="moTab('homnay')"><span class="tq-so" id="tqQuen">—</span><span class="tq-nh">🔴 quên out</span></button>
+      <button type="button" class="tq-o" onclick="moTab('ticket')"><span class="tq-so" id="tqTicket">—</span><span class="tq-nh">📋 ticket</span></button>
+      <button type="button" class="tq-o" onclick="moTab('nhanvien')"><span class="tq-so" id="tqTien">—</span><span class="tq-nh">💵 còn trả</span></button>
+    </div>
+
+    <!-- ===== MÀN DANH SÁCH ===== -->
+    <div id="board" class="card" style="display:none">
+      <div class="topbar">
+        <h3>Ticket chờ duyệt</h3>
+        <span class="count" id="count"></span>
+        <span class="dangcn" id="cnTicket" style="display:none">đang cập nhật…</span>
+        <button type="button" class="btn btn-ghost btn-sm" style="width:auto;padding:0 14px" onclick="loadList()">Tải lại</button>
+      </div>
+      <div id="boardBox" class="box"></div>
+      <div id="list"></div>
+      <div id="empty" class="empty" style="display:none">✓ Không có ticket nào chờ duyệt.</div>
+    </div>
+
+    <!-- ===== MÀN HÔM NAY (chỉ xem): ai đang trong ca / quên check-out / đã xong ca ===== -->
+    <div id="homnay" class="card" style="display:none">
+      <div class="topbar">
+        <h3>Hôm nay</h3>
+        <span class="count" id="hnNgay"></span>
+        <span class="dangcn" id="cnHomNay" style="display:none">đang cập nhật…</span>
+        <button type="button" class="btn btn-ghost btn-sm" style="width:auto;padding:0 14px" onclick="taiHomNay()">Tải lại</button>
+      </div>
+      <div id="hnBox" class="box"></div>
+      <div id="hnKQ"></div>
+    </div>
+
+    <!-- ===== MÀN TÍNH LƯƠNG (chỉ xem — bảng lương chính thức vẫn tạo bằng menu trong Sheet) ===== -->
+    <div id="luong" class="card" style="display:none">
+      <div class="topbar">
+        <h3>Tính lương</h3>
+        <span class="count" id="luongKhoang"></span>
+      </div>
+      <div class="range">
+        <div class="f"><label class="lbl" for="tuNgay">Từ ngày</label><input type="date" id="tuNgay"></div>
+        <div class="f"><label class="lbl" for="denNgay">Đến ngày</label><input type="date" id="denNgay"></div>
+      </div>
+      <div class="chips">
+        <button type="button" class="chip" onclick="chonKy(0)">Kỳ này</button>
+        <button type="button" class="chip" onclick="chonKy(-1)">Kỳ trước</button>
+        <button type="button" class="chip" onclick="chon7Ngay()">7 ngày qua</button>
+      </div>
+      <div class="field">
+        <button type="button" class="btn btn-primary" id="btnTinh" onclick="tinhLuong()">Tính lương</button>
+      </div>
+      <div id="luongBox" class="box"></div>
+      <div id="luongKQ"></div>
+      <div class="field" id="khuCSV" style="display:none">
+        <button type="button" class="btn btn-ghost" onclick="xuatCSV()">⬇ Xuất file CSV (mở được bằng Excel)</button>
+      </div>
+
+      <!-- ===== CHỐT KỲ (v12) — đóng băng số kỳ đã trả, mốc tính "còn phải trả" của từng NV ===== -->
+      <div class="nvx-sec">🔒 Chốt kỳ</div>
+      <div class="hint" style="margin-top:2px">Chốt xong, tiền kỳ đó được đóng băng — đổi đơn giá sau này không làm lệch kỳ cũ.</div>
+      <div id="ckBox" class="box"></div>
+      <div id="ckKetQua"></div>
+      <div id="ckKQ"></div>
+      <div class="field">
+        <button type="button" class="btn btn-ghost" onclick="ckMoForm()">🔒 Chốt kỳ...</button>
+      </div>
+      <div class="sua" id="ckForm" style="display:none">
+        <div class="range">
+          <div class="f"><label class="lbl" for="ckTu">Kỳ từ ngày</label><input type="date" id="ckTu"></div>
+          <div class="f"><label class="lbl" for="ckDen">Kỳ đến ngày</label><input type="date" id="ckDen"></div>
+        </div>
+        <div class="bu-warn">⚠ Chốt rồi KHÔNG hủy được trên app. Nên tính lương xem kỹ trước khi chốt.</div>
+        <div class="nvx-row">
+          <button type="button" class="btn btn-primary btn-sm" onclick="ckChot(this)">Chốt kỳ này</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="ckMoForm()">Đóng</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MÀN NHÂN VIÊN (v10.0): thêm/đổi vị trí/reset PIN/cho nghỉ + vị trí & đơn giá ===== -->
+    <div id="nhanvien" class="card" style="display:none">
+      <div class="topbar">
+        <h3>Nhân viên</h3>
+        <span class="count" id="nvCount"></span>
+        <span class="dangcn" id="cnNhanVien" style="display:none">đang cập nhật…</span>
+        <button type="button" class="btn btn-ghost btn-sm" style="width:auto;padding:0 14px" onclick="taiNhanVien()">Tải lại</button>
+      </div>
+      <div id="nvBox" class="box"></div>
+      <div id="nvPinKQ"></div>
+      <div class="field">
+        <button type="button" class="btn btn-ghost" onclick="nvMoThem()">＋ Thêm nhân viên</button>
+      </div>
+      <div class="sua" id="nvFormThem" style="display:none">
+        <label class="nvx-lbl" for="nvThemTen">Tên nhân viên</label>
+        <input type="text" id="nvThemTen" autocomplete="off" placeholder="VD: Nguyễn Văn A">
+        <label class="nvx-lbl" for="nvThemPin" style="margin-top:12px">PIN 4 số <span style="font-weight:400;color:var(--muted)">— để trống thì máy tự sinh</span></label>
+        <input type="text" id="nvThemPin" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="VD: 1234">
+        <label class="nvx-lbl" for="nvThemSdt" style="margin-top:12px">Số điện thoại <span style="font-weight:400;color:var(--muted)">— không bắt buộc</span></label>
+        <input type="tel" id="nvThemSdt" inputmode="numeric" autocomplete="off" maxlength="11" placeholder="VD: 0382969042">
+        <label class="nvx-lbl" for="nvThemViTri" style="margin-top:12px">Vị trí</label>
+        <div id="nvThemVT"></div>
+        <div class="nvx-row">
+          <button type="button" class="btn btn-primary btn-sm" onclick="nvThem(this)">Thêm nhân viên</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="nvMoThem()">Đóng</button>
+        </div>
+      </div>
+      <div id="nvKQ"></div>
+
+      <div class="nvx-sec">Vị trí &amp; đơn giá</div>
+      <div class="hint" style="margin-top:2px">Đơn giá gắn theo vị trí — đổi là áp cho mọi nhân viên ở vị trí đó.</div>
+      <div id="vtBox" class="box"></div>
+      <div id="vtKQ"></div>
+      <div class="field">
+        <button type="button" class="btn btn-ghost" onclick="vtMoThem()">＋ Thêm vị trí</button>
+      </div>
+      <div class="sua" id="vtFormThem" style="display:none">
+        <label class="nvx-lbl" for="vtThemTen">Tên vị trí</label>
+        <input type="text" id="vtThemTen" autocomplete="off" placeholder="VD: Pha chế">
+        <label class="nvx-lbl" for="vtThemGia" style="margin-top:12px">Đơn giá (đ/giờ)</label>
+        <input type="number" id="vtThemGia" inputmode="numeric" placeholder="VD: 30000">
+        <div class="nvx-row">
+          <button type="button" class="btn btn-primary btn-sm" onclick="vtThem(this)">Thêm vị trí</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="vtMoThem()">Đóng</button>
+        </div>
+      </div>
+
+      <!-- ===== ⚙️ QUẢN TRỊ (v13) — nhật ký + CSV toàn sổ + sao lưu ===== -->
+      <div class="nvx-sec">⚙️ Quản trị</div>
+      <div id="qtBox" class="box"></div>
+      <div class="field">
+        <button type="button" class="btn btn-ghost" onclick="qtNhatKyMo()">📜 Nhật ký thay đổi</button>
+      </div>
+      <div id="qtNhatKy" class="qt-nk" style="display:none"></div>
+      <div class="nvx-row">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="qtCsvChiTra(this)">⬇ CSV sổ chi trả</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="qtCsvKyChot(this)">⬇ CSV kỳ đã chốt</button>
+      </div>
+      <div class="field">
+        <button type="button" class="btn btn-ghost" onclick="qtBackup(this)">💾 Sao lưu ngay</button>
+      </div>
+      <div class="hint">Sao lưu tự động hàng tuần: nhờ đệ/đại ca cài trigger <b>backupTuan</b> trong Apps Script (1 lần).</div>
+    </div>
+  </div>
+
+  <script>
+    // ===== App Duyệt Tân Niên — SPA tĩnh trên GitHub Pages, gọi Apps Script qua API JSON.
+    // Bảo mật: mã duyệt KHÔNG lưu ở client (không localStorage/cookie), chỉ giữ trong RAM
+    // và gửi kèm mỗi thao tác; server verify lại mỗi call.
+    var API_URL = '__API_URL_TN__';
+
+    var mk = '';           // giữ trong RAM, không lưu localStorage
+    var ngayChot = '';     // lấy từ response 'bootstrap' lúc mở khóa
+    var tenQuan = '';      // v13 — bootstrap trả về (dùng cho tên file xuất/nhãn sau này)
+    var busy = false;
+
+    // v13 — cache phiên CHỈ RAM (không localStorage): mở tab có cache → render ngay rồi tải ngầm.
+    var phienCache = { ticket: null, homnay: null, nvlist: null, sodu: null };   // mỗi ô: {data, luc}
+
+    // v13 — api ĐỌC được tự thử lại 1 lần khi lỗi mạng; api GHI thì KHÔNG (tránh ghi trùng).
+    var API_DOC = {
+      bootstrap: 1, tickets: 1, homnay: 1, tinhluong: 1, nvlist: 1, sodu: 1,
+      kydachot: 1, chitralist: 1, nhatky: 1, chitraall: 1, kychotall: 1, anh: 1
+    };
+    function laApiDoc(api) { return API_DOC[String(api == null ? '' : api)] === 1; }
+
+    var $ = function (id) { return document.getElementById(id); };
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]; }); }
+
+    function showBox(el, cls, msg) { el.className = 'box ' + cls; el.textContent = msg; el.style.display = 'block'; }
+    function hideBox(el) { el.style.display = 'none'; }
+
+    // ===== Gọi API Apps Script =====
+    // Content-Type text/plain để tránh preflight CORS. Timeout 30s.
+    // onOk(res) nhận JSON đã parse; onErr(msg) nhận câu báo lỗi tiếng Việt sẵn để hiện.
+    // daThu = true khi đây đã là lần thử lại (không thử lại lần nữa).
+    function goiApi(payload, onOk, onErr, daThu) {
+      var xong = false;
+      var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 30000);
+      var opt = {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(payload),
+        redirect: 'follow'
+      };
+      if (ctrl) opt.signal = ctrl.signal;
+      fetch(API_URL, opt).then(function (r) {
+        return r.text();
+      }).then(function (txt) {
+        clearTimeout(timer);
+        xong = true;
+        var data = null;
+        try { data = JSON.parse(txt); } catch (e) { data = null; }
+        // Google trả trang lỗi HTML khi hệ thống bận / script lỗi → không parse được JSON
+        if (!data) { onErr('Hệ thống bận, thử lại.'); return; }
+        onOk(data);
+      })['catch'](function () {
+        clearTimeout(timer);
+        if (xong) return;   // lỗi phát sinh trong onOk/onErr — không báo nhầm là lỗi mạng
+        // v13 — lỗi MẠNG/timeout của lệnh ĐỌC: tự thử lại đúng 1 lần sau 1.5s rồi mới báo.
+        if (daThu !== true && laApiDoc(payload && payload.api)) {
+          setTimeout(function () { goiApi(payload, onOk, onErr, true); }, 1500);
+          return;
+        }
+        onErr('Mạng yếu, thử lại.');
+      });
+    }
+
+    // ===== v13 — DẢI TỔNG QUAN =====
+    // Tiền rút gọn cho ô hẹp: 0 → '0đ'; <1tr → '855k'; ≥1tr → '4,4tr'
+    function tienGon(n) {
+      n = Number(n);
+      if (!isFinite(n)) n = 0;
+      if (n < 0) return '-' + tienGon(-n);
+      if (n >= 1000000) return String(Math.round(n / 100000) / 10).replace('.', ',') + 'tr';
+      if (n >= 1000) return Math.round(n / 1000) + 'k';
+      return n + 'đ';
+    }
+
+    // Nhãn "đang cập nhật…" cạnh nút Tải lại của từng tab
+    function nhanCN(id, hien) {
+      var el = $(id);
+      if (el) el.style.display = hien ? 'inline' : 'none';
+    }
+
+    // Gọi mỗi khi tickets / homnay / sodu có data mới (và sau khi xóa thẻ ticket tại chỗ).
+    function capNhatTongQuan() {
+      var hn = phienCache.homnay ? phienCache.homnay.data : null;
+      var sd = phienCache.sodu ? phienCache.sodu.data : null;
+      $('tqDang').textContent = hn ? String((hn.dangLam || []).length) : '—';
+      $('tqQuen').textContent = hn ? String((hn.quenCheckout || []).length) : '—';
+      // đếm thẻ đang có trên màn — duyệt/từ chối xóa thẻ tại chỗ là dải khớp ngay
+      $('tqTicket').textContent = phienCache.ticket ? String(document.querySelectorAll('#list .ticket').length) : '—';
+      var tongCL = null;
+      if (sd) {
+        tongCL = (typeof sd.tongConLai === 'number') ? sd.tongConLai
+          : (sd.ds || []).reduce(function (t, x) { return t + (Number(x.conLai) || 0); }, 0);
+      }
+      $('tqTien').textContent = (tongCL === null) ? '—' : tienGon(tongCL);
+    }
+
+    $('mk').addEventListener('keydown', function (e) { if (e.key === 'Enter') doOpen(); });
+
+    // ===== MỞ KHÓA (v13.1: 'tickets' nhẹ; Tổng quan điền ngầm sau) =====
+    function doOpen() {
+      var val = $('mk').value.trim();
+      if (!val) { showBox($('lockBox'), 'err', 'Vui lòng nhập mã duyệt.'); return; }
+      $('btnOpen').disabled = true; $('btnOpen').textContent = 'Đang kiểm tra...';
+      hideBox($('lockBox'));
+      // v13.1: login bằng 'tickets' NHẸ (2-4s) — 'bootstrap' gộp 3 lượt đọc bị chậm 30s+ lúc
+      // server nguội làm treo màn chờ. Dải Tổng quan điền NGẦM sau bằng 2 call song song.
+      goiApi({ api: 'tickets', mk: val }, function (res) {
+        $('btnOpen').disabled = false; $('btnOpen').textContent = 'Mở trang duyệt';
+        if (res && res.ok) {
+          mk = val;
+          ngayChot = (res.ngayChot == null) ? '' : res.ngayChot;
+          tenQuan = (res.tenQuan == null) ? '' : res.tenQuan;
+          $('lock').style.display = 'none';
+          $('tabs').style.display = 'flex';
+          $('tongquan').style.display = 'grid';
+          $('board').style.display = 'block';
+          renderList(res);
+          phienCache.ticket = { data: res, luc: Date.now() };
+          capNhatTongQuan();
+          // điền ngầm dải Tổng quan + cache phiên (không chặn login; lỗi thì ô hiện — chờ lượt sau)
+          goiApi({ api: 'homnay', mk: mk }, function (r2) {
+            if (r2 && r2.ok) { phienCache.homnay = { data: r2, luc: Date.now() }; capNhatTongQuan(); }
+          }, function () {});
+          goiApi({ api: 'sodu', mk: mk }, function (r3) {
+            if (r3 && r3.ok) { phienCache.sodu = { data: r3, luc: Date.now() }; capNhatTongQuan(); }
+          }, function () {});
+        } else {
+          showBox($('lockBox'), 'err', (res && res.message) ? res.message : 'Không mở được.');
+        }
+      }, function (msg) {
+        $('btnOpen').disabled = false; $('btnOpen').textContent = 'Mở trang duyệt';
+        showBox($('lockBox'), 'err', msg);
+      });
+    }
+
+    function loadList() {
+      if (!mk || busy) return;
+      hideBox($('boardBox'));
+      goiApi({ api: 'tickets', mk: mk }, function (res) {
+        nhanCN('cnTicket', false);
+        if (res && res.ok) {
+          phienCache.ticket = { data: res, luc: Date.now() };   // v13 — cache phiên
+          renderList(res);
+          capNhatTongQuan();
+        } else showBox($('boardBox'), 'err', (res && res.message) ? res.message : 'Không tải được.');
+      }, function (msg) {
+        nhanCN('cnTicket', false);
+        showBox($('boardBox'), 'err', msg);
+      });
+    }
+
+    // v13 — mở tab Duyệt: có cache thì hiện ngay rồi tải ngầm (hiện-cũ-tải-mới)
+    function taiTicketCache() {
+      if (!mk) return;
+      if (phienCache.ticket) { renderList(phienCache.ticket.data); nhanCN('cnTicket', true); }
+      loadList();
+    }
+
+    function renderList(res) {
+      var tickets = (res && res.tickets) || [];
+      $('count').textContent = tickets.length ? (tickets.length + ' ticket') : '';
+      var list = $('list');
+      list.innerHTML = '';
+      $('empty').style.display = tickets.length ? 'none' : 'block';
+      tickets.forEach(function (t) {
+        var div = document.createElement('div');
+        div.className = 'ticket';
+        var row = Number(t.row);
+        var html = '<div class="who">' + esc(t.ten) + '</div>' +
+                   '<div class="sub">Gửi lúc ' + esc(t.tsGui) + ' · dòng ' + esc(t.row) + '</div>';
+        if (t.bu) {
+          html += '<div class="bu">Đề nghị bù: <b>' + esc(t.bu.loai) + '</b> lúc <b>' + esc(t.bu.ngayGio) +
+                  '</b><br>Ca: <b>' + esc(t.bu.ca) + '</b></div>';
+        } else {
+          html += '<div class="bu-warn">⚠ Ticket không có thông tin bù (gửi từ form cũ). Không duyệt được ở đây — dùng menu "Duyệt điều chỉnh giờ..." trên máy tính.</div>';
+        }
+        if (t.note) html += '<div class="note"><span class="k">Ghi chú:</span> ' + esc(t.note) + '</div>';
+        // v13 — bấm để xem ảnh NGAY trong thẻ; href Drive giữ nguyên làm fallback khi tải ảnh lỗi
+        if (t.anhUrl && String(t.anhUrl).indexOf('http') === 0) {
+          html += '<div class="links" id="anh-' + row + '">' +
+            '<a href="' + esc(t.anhUrl) + '" target="_blank" rel="noopener" onclick="return anhBam(' + row + ', this)">📷 Xem ảnh</a>' +
+            '</div>';
+        }
+        html += '<div class="acts">' +
+                (t.bu ? '<button type="button" class="btn btn-approve btn-sm" onclick="doDuyet(' + row + ', this)">Duyệt</button>' : '') +
+                '<button type="button" class="btn btn-reject btn-sm" onclick="doTuChoi(' + row + ', this)">Từ chối</button>' +
+                '</div>';
+        if (t.bu) {
+          // Sửa giờ rồi duyệt — khi nhân viên khai nhầm giờ (vd khai giờ gửi form thay vì giờ vào thật)
+          html += '<div class="sua-link"><a href="javascript:void(0)" onclick="moSua(' + row + ')">✎ Sửa giờ rồi duyệt</a></div>' +
+            '<div class="sua" id="sua-' + row + '" style="display:none">' +
+              '<div class="range">' +
+                '<div class="f"><label class="lbl" for="suaNgay-' + row + '">Ngày bù</label><input type="date" id="suaNgay-' + row + '" value="' + esc(t.bu.ngayISO || '') + '"></div>' +
+                '<div class="f"><label class="lbl" for="suaGio-' + row + '">Giờ bù</label><input type="time" id="suaGio-' + row + '" value="' + esc(t.bu.gio || '') + '"></div>' +
+              '</div>' +
+              '<div class="acts">' +
+                '<button type="button" class="btn btn-approve btn-sm" onclick="doDuyetSua(' + row + ', this)">Duyệt với giờ này</button>' +
+                '<button type="button" class="btn btn-ghost btn-sm" onclick="dongSua(' + row + ')">Đóng</button>' +
+              '</div>' +
+            '</div>';
+        }
+        div.innerHTML = html;
+        list.appendChild(div);
+      });
+    }
+
+    // ===== v13 — ẢNH CHẤM CÔNG INLINE (api 'anh' trả base64; server đã chặn file ngoài folder ảnh) =====
+    var anhCache = {};   // fileId -> data URI (RAM trong phiên)
+
+    // id file Drive nằm trong link dạng .../d/<id>/view hoặc ?id=<id>
+    function layFileId(url) {
+      var m = String(url == null ? '' : url).match(/[-\w]{25,}/);
+      return m ? m[0] : '';
+    }
+    // chỉ nhận mime ảnh + base64 sạch — không để chuỗi lạ chui vào thuộc tính src
+    function anhHopLe(mime, b64) {
+      return /^image\/[-\w.+]{1,40}$/.test(String(mime == null ? '' : mime)) &&
+             /^[A-Za-z0-9+/=]+$/.test(String(b64 == null ? '' : b64));
+    }
+
+    function anhHien(row, src) {
+      var hop = $('anh-' + row);
+      if (!hop) return;
+      var img = $('anhimg-' + row);
+      if (!img) {
+        img = document.createElement('img');
+        img.className = 'anh-xem';
+        img.id = 'anhimg-' + row;
+        img.alt = 'Ảnh chấm công';
+        img.setAttribute('onclick', 'anhAn(' + row + ')');
+        img.setAttribute('src', src);
+        hop.appendChild(img);
+      }
+      img.style.display = 'block';
+    }
+    function anhAn(row) {
+      var img = $('anhimg-' + row);
+      if (img) img.style.display = 'none';
+    }
+
+    // Trả false = đã xử lý trong app; true = để trình duyệt mở link Drive (fallback).
+    function anhBam(row, a) {
+      if (a.getAttribute('data-loi') === '1') return true;   // lần trước lỗi → mở Drive
+      var img = $('anhimg-' + row);
+      if (img) { img.style.display = (img.style.display === 'none') ? 'block' : 'none'; return false; }
+      var id = layFileId(a.getAttribute('href'));
+      if (!id || !mk) return true;
+      if (anhCache[id]) { anhHien(row, anhCache[id]); return false; }
+      a.textContent = '📷 Đang tải ảnh...';
+      goiApi({ api: 'anh', mk: mk, fileId: id }, function (res) {
+        if (res && res.ok && anhHopLe(res.mime, res.b64)) {
+          a.textContent = '📷 Xem ảnh';
+          var src = 'data:' + res.mime + ';base64,' + res.b64;
+          anhCache[id] = src;
+          anhHien(row, src);
+        } else {
+          anhLoi(a, (res && res.message) ? res.message : 'Không tải được ảnh.');
+        }
+      }, function (msg) {
+        anhLoi(a, msg);
+      });
+      return false;
+    }
+    function anhLoi(a, msg) {
+      a.setAttribute('data-loi', '1');
+      a.textContent = '📷 Mở ảnh trên Drive (' + msg + ')';
+    }
+
+    function lockActs(disabled) {
+      busy = disabled;
+      Array.prototype.forEach.call(document.querySelectorAll('.acts .btn'), function (b) { b.disabled = disabled; });
+    }
+
+    // Xóa 1 thẻ khỏi danh sách + cập nhật đếm tại chỗ (khỏi gọi lại server → mượt, hết lag).
+    function removeCard(btn) {
+      var card = btn.closest ? btn.closest('.ticket') : null;
+      if (card && card.parentNode) card.parentNode.removeChild(card);
+      var n = document.querySelectorAll('#list .ticket').length;
+      $('count').textContent = n ? (n + ' ticket') : '';
+      $('empty').style.display = n ? 'none' : 'block';
+      capNhatTongQuan();   // v13 — ô 📋 ticket khớp ngay sau khi duyệt/từ chối
+    }
+
+    function doAction(api, row, btn) {
+      if (busy) return;
+      lockActs(true); btn.textContent = 'Đang xử lý...';
+      goiApi({ api: api, mk: mk, row: row }, function (res) {
+        lockActs(false);
+        var ok = !!(res && res.ok);
+        showBox($('boardBox'), ok ? 'ok' : 'err', (res && res.message) ? res.message : 'Không rõ kết quả.');
+        if (ok) removeCard(btn);   // xóa tại chỗ, KHÔNG tải lại toàn bộ (bỏ 1 vòng gọi server)
+        else loadList();           // trạng thái lệch (ticket đã xử lý nơi khác...) → đồng bộ lại cho chắc
+      }, function (msg) {
+        lockActs(false);
+        showBox($('boardBox'), 'err', msg);
+        loadList();
+      });
+    }
+
+    function doDuyet(row, btn) {
+      if (busy) return;
+      if (!window.confirm('Duyệt ticket này? Máy sẽ tạo dòng chấm bù và đóng ticket.')) return;
+      doAction('duyet', row, btn);
+    }
+
+    function doTuChoi(row, btn) {
+      if (busy) return;
+      if (!window.confirm('Từ chối ticket này? Ticket sẽ được đánh dấu "Loại" và không tính giờ.')) return;
+      doAction('tuchoi', row, btn);
+    }
+
+    // ===== SỬA GIỜ RỒI DUYỆT =====
+    function moSua(row) {
+      var el = $('sua-' + row);
+      if (el) el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+    }
+    function dongSua(row) {
+      var el = $('sua-' + row);
+      if (el) el.style.display = 'none';
+    }
+    function doDuyetSua(row, btn) {
+      if (busy) return;
+      var ngay = $('suaNgay-' + row).value, gio = $('suaGio-' + row).value;
+      if (!ngay || !gio) { showBox($('boardBox'), 'err', 'Chọn đủ Ngày bù và Giờ bù.'); return; }
+      var hienThi = ngay.slice(8, 10) + '/' + ngay.slice(5, 7) + '/' + ngay.slice(0, 4) + ' ' + gio;
+      if (!window.confirm('Duyệt với giờ ĐÃ CHỈNH: ' + hienThi + '?\nMáy sẽ tạo dòng chấm bù theo giờ này và ghi rõ dấu vết chỉnh vào Sheet.')) return;
+      lockActs(true); btn.textContent = 'Đang xử lý...';
+      goiApi({ api: 'duyet', mk: mk, row: row, ngayMoi: ngay, gioMoi: gio }, function (res) {
+        lockActs(false); btn.textContent = 'Duyệt với giờ này';
+        var ok = !!(res && res.ok);
+        showBox($('boardBox'), ok ? 'ok' : 'err', (res && res.message) ? res.message : 'Không rõ kết quả.');
+        if (ok) removeCard(btn); else loadList();
+      }, function (msg) {
+        lockActs(false); btn.textContent = 'Duyệt với giờ này';
+        showBox($('boardBox'), 'err', msg);
+        loadList();
+      });
+    }
+
+    // ===== TAB TÍNH LƯƠNG (chỉ xem — server verify mã mỗi call, không ghi gì vào Sheet) =====
+    var luongBusy = false;
+    var luongData = null;   // kết quả tính gần nhất — nguồn cho nút Xuất CSV
+
+    function moTab(t) {
+      $('board').style.display = (t === 'ticket') ? 'block' : 'none';
+      $('homnay').style.display = (t === 'homnay') ? 'block' : 'none';
+      $('luong').style.display = (t === 'luong') ? 'block' : 'none';
+      $('nhanvien').style.display = (t === 'nhanvien') ? 'block' : 'none';
+      $('tabTicket').className = 'tab' + (t === 'ticket' ? ' on' : '');
+      $('tabHomNay').className = 'tab' + (t === 'homnay' ? ' on' : '');
+      $('tabLuong').className = 'tab' + (t === 'luong' ? ' on' : '');
+      $('tabNhanVien').className = 'tab' + (t === 'nhanvien' ? ' on' : '');
+      if (t === 'ticket') taiTicketCache();                // v13: hiện cache rồi tải ngầm
+      if (t === 'luong' && !$('tuNgay').value) chonKy(0); // lần đầu mở: tự chọn kỳ này + tính luôn
+      if (t === 'homnay') taiHomNay();                    // mỗi lần mở tab là lấy số liệu tươi
+      if (t === 'nhanvien') taiNhanVien();                // mỗi lần mở tab là lấy danh sách tươi
+      if (t === 'luong') ckTai();                         // v12: danh sách kỳ đã chốt
+      if (t === 'nhanvien') sdTai();                      // v12: số dư chi trả — gọi SONG SONG nvlist, về sau thì vá vào thẻ
+    }
+
+    // ===== TAB HÔM NAY (chỉ xem) =====
+    var hnBusy = false;
+
+    function taiHomNay() {
+      if (!mk || hnBusy) return;
+      hnBusy = true;
+      hideBox($('hnBox'));
+      // v13 — có cache phiên: render ngay + nhãn "đang cập nhật…", chưa có thì như cũ
+      var coCache = !!phienCache.homnay;
+      if (coCache) { renderHomNay(phienCache.homnay.data); nhanCN('cnHomNay', true); }
+      else $('hnKQ').innerHTML = '<div class="empty">Đang tải...</div>';
+      goiApi({ api: 'homnay', mk: mk }, function (res) {
+        hnBusy = false;
+        nhanCN('cnHomNay', false);
+        if (!res || !res.ok) {
+          if (!coCache) $('hnKQ').innerHTML = '';
+          showBox($('hnBox'), 'err', (res && res.message) ? res.message : 'Không tải được, thử lại.');
+          return;
+        }
+        phienCache.homnay = { data: res, luc: Date.now() };
+        renderHomNay(res);
+        capNhatTongQuan();
+      }, function (msg) {
+        hnBusy = false;
+        nhanCN('cnHomNay', false);
+        if (!coCache) $('hnKQ').innerHTML = '';
+        showBox($('hnBox'), 'err', msg);
+      });
+    }
+
+    function hnRow(x, gio) {
+      return '<div class="hnrow"><span class="ten">' + esc(x.ten) + '</span>' +
+             '<span class="ca2">' + esc(x.ca || '—') + '</span>' +
+             '<span class="gio2">' + gio + '</span></div>';
+    }
+
+    function renderHomNay(res) {
+      $('hnNgay').textContent = res.ngay || '';
+      var dang = res.dangLam || [], quen = res.quenCheckout || [], xong = res.xongCa || [], bat = res.batThuong || [];
+      var html = '';
+      html += '<div class="hnSec xanh">🟢 Đang trong ca (' + dang.length + ')</div>';
+      html += dang.length ? dang.map(function (x) { return hnRow(x, 'vào ' + esc(x.gioVao)); }).join('')
+                          : '<div class="empty" style="padding:10px">Không có ai đang trong ca.</div>';
+      if (quen.length) {
+        html += '<div class="hnSec do">🔴 Quên check-out (' + quen.length + ')</div>' +
+                quen.map(function (x) { return hnRow(x, 'vào ' + esc(x.gioVao) + ' · chưa ra'); }).join('');
+      }
+      html += '<div class="hnSec xam">✅ Đã xong ca (' + xong.length + ')</div>';
+      html += xong.length ? xong.map(function (x) { return hnRow(x, esc(x.gioVao) + ' → ' + esc(x.gioRa) + ' · ' + esc(x.soGio) + 'h'); }).join('')
+                          : '<div class="empty" style="padding:10px">Chưa ai xong ca hôm nay.</div>';
+      if (bat.length) {
+        html += '<div class="hnSec do">⚠ Bất thường — chỉ có Check-out (' + bat.length + ')</div>' +
+                bat.map(function (x) { return hnRow(x, 'ra ' + esc(x.gioRa)); }).join('');
+      }
+      $('hnKQ').innerHTML = html;
+    }
+
+    // Kỳ lương theo NGAY_CHOT (d): từ ngày d+1 tháng trước đến hết ngày d tháng chốt.
+    // offset 0 = kỳ này, -1 = kỳ trước. Không đặt NGAY_CHOT → trọn tháng dương.
+    function kyRange(offset) {
+      var d = parseInt(ngayChot, 10);
+      var now = new Date();
+      if (!(d >= 1 && d <= 27)) {
+        var m = now.getMonth() + offset;
+        return [new Date(now.getFullYear(), m, 1), new Date(now.getFullYear(), m + 1, 0)];
+      }
+      var chotThang = now.getMonth() + (now.getDate() <= d ? 0 : 1) + offset;
+      var chot = new Date(now.getFullYear(), chotThang, 1);
+      return [new Date(chot.getFullYear(), chot.getMonth() - 1, d + 1), new Date(chot.getFullYear(), chot.getMonth(), d)];
+    }
+
+    function isoLocal(dt) {
+      return dt.getFullYear() + '-' + ('0' + (dt.getMonth() + 1)).slice(-2) + '-' + ('0' + dt.getDate()).slice(-2);
+    }
+    function chonKy(off) { var r = kyRange(off); $('tuNgay').value = isoLocal(r[0]); $('denNgay').value = isoLocal(r[1]); tinhLuong(); }
+    function chon7Ngay() { var n = new Date(); $('tuNgay').value = isoLocal(new Date(n.getTime() - 6 * 86400000)); $('denNgay').value = isoLocal(n); tinhLuong(); }
+    function vnd(n) { return (n || 0).toLocaleString('vi-VN'); }
+
+    function tinhLuong() {
+      if (!mk || luongBusy) return;
+      var tu = $('tuNgay').value, den = $('denNgay').value;
+      if (!tu || !den) { showBox($('luongBox'), 'err', 'Chọn đủ Từ ngày và Đến ngày.'); return; }
+      luongBusy = true; $('btnTinh').disabled = true; $('btnTinh').textContent = 'Đang tính...';
+      hideBox($('luongBox'));
+      goiApi({ api: 'tinhluong', mk: mk, tu: tu, den: den }, function (res) {
+        luongBusy = false; $('btnTinh').disabled = false; $('btnTinh').textContent = 'Tính lương';
+        if (!res || !res.ok) {
+          showBox($('luongBox'), 'err', (res && res.message) ? res.message : 'Không tính được, thử lại.');
+          $('luongKQ').innerHTML = ''; $('luongKhoang').textContent = '';
+          luongData = null; $('khuCSV').style.display = 'none';
+          return;
+        }
+        luongData = res;
+        $('khuCSV').style.display = (res.tongHop && res.tongHop.length) ? 'block' : 'none';
+        renderLuong(res);
+      }, function (msg) {
+        luongBusy = false; $('btnTinh').disabled = false; $('btnTinh').textContent = 'Tính lương';
+        showBox($('luongBox'), 'err', msg);
+      });
+    }
+
+    function renderLuong(res) {
+      $('luongKhoang').textContent = res.tuNgay + ' – ' + res.denNgay;
+      var canhBaoHtml = '';
+      if (res.soCanhBao) {
+        // sổ chi tiết từng dòng cần kiểm tra: ngày · ai · vị trí · ca — thiếu gì
+        var dsLoi = (res.chiTiet || []).filter(function (c) { return c.loi; });
+        var vtMap = {};
+        (res.tongHop || []).forEach(function (p) { vtMap[p.ten] = p.viTri || ''; });
+        var coNamCB = String(res.tuNgay).slice(-4) !== String(res.denNgay).slice(-4);
+        var rowsCB = dsLoi.map(function (c) {
+          var ngay = String(c.ngay).slice(8, 10) + '/' + String(c.ngay).slice(5, 7) + (coNamCB ? '/' + String(c.ngay).slice(2, 4) : '');
+          var lyDo;
+          if (!c.gioVao || !c.gioRa) {
+            // nói rõ thiếu cái nào — không dùng ghi chú chung của server (câu đó chỉ về Sheet)
+            lyDo = !c.gioVao
+              ? 'Thiếu Check-in — chỉ có giờ ra ' + (c.gioRa || '—')
+              : 'Thiếu Check-out — chỉ có giờ vào ' + (c.gioVao || '—') + ' (NV quên chấm ra, hoặc ca hôm nay chưa xong)';
+            lyDo += '. Xử lý: chờ NV gửi "Điều chỉnh giờ" rồi duyệt ở tab Duyệt.';
+          } else {
+            lyDo = c.ghiChu ? String(c.ghiChu).replace(/^⚠\s*/, '') : 'Kiểm tra lại giờ chấm';
+          }
+          return '<div class="cbrow"><b>' + esc(ngay) + ' · ' + esc(c.ten) + '</b>' +
+            (vtMap[c.ten] ? ' · ' + esc(vtMap[c.ten]) : '') + ' · ca ' + esc(c.ca || '—') +
+            '<br><span class="cbly">' + esc(lyDo) + '</span></div>';
+        }).join('');
+        canhBaoHtml = '<details class="cb"><summary><span class="warntxt">⚠ ' + esc(res.soCanhBao) +
+          ' dòng cần kiểm tra — bấm xem chi tiết</span></summary>' + rowsCB + '</details>';
+      }
+      var html = '<div class="tong">Tổng cả quán: <b>' + vnd(res.tongTien) + ' đ</b> · ' + esc(res.tongGio) + ' giờ' + canhBaoHtml + '</div>';
+      var tongHop = res.tongHop || [];
+      if (!tongHop.length) {
+        html += '<div class="empty">Không có dữ liệu chấm công hợp lệ trong khoảng này.</div>';
+      }
+      var ctMap = {};
+      (res.chiTiet || []).forEach(function (c) { (ctMap[c.ten] = ctMap[c.ten] || []).push(c); });
+      var coNam = String(res.tuNgay).slice(-4) !== String(res.denNgay).slice(-4); // khoảng vắt năm → hiện thêm năm
+      tongHop.forEach(function (p) {
+        var rows = (ctMap[p.ten] || []).map(function (c) {
+          var ngay = String(c.ngay).slice(8, 10) + '/' + String(c.ngay).slice(5, 7) + (coNam ? '/' + String(c.ngay).slice(2, 4) : '');
+          return '<div class="ctrow' + (c.loi ? ' loi' : '') + '">' +
+            '<span class="d">' + esc(ngay) + '</span>' +
+            '<span class="c">' + esc(c.ca || '—') + '</span>' +
+            '<span class="h">' + esc(c.gioVao || '—') + ' → ' + esc(c.gioRa || '—') + '</span>' +
+            '<span class="g">' + esc(c.soGio) + 'h</span></div>' +
+            (c.ghiChu ? '<div class="ctghi' + (c.loi ? '' : ' nhe') + '">' + esc(c.ghiChu) + '</div>' : '');
+        }).join('');
+        html += '<details class="nv"><summary>' +
+          '<span class="who">' + esc(p.ten) + '</span>' +
+          '<span class="money">' + vnd(p.thanhTien) + ' đ</span>' +
+          '<span class="sub2">' + esc(p.viTri || '—') + ' · ' + vnd(p.donGia) + ' đ/giờ' + (p.noMatch ? ' <span class="warntxt">⚠ chưa khớp đơn giá</span>' : '') + '</span>' +
+          '<span class="gio">' + esc(p.tongGio) + ' giờ</span>' +
+          '</summary>' + rows + '</details>';
+      });
+      $('luongKQ').innerHTML = html;
+    }
+
+    // ===== XUẤT CSV từ kết quả tính lương gần nhất (sinh ngay trên máy, không gọi server) =====
+    function csvCell(v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; }
+    var CSV_BOM = String.fromCharCode(0xFEFF);   // v13 — dùng chung cho CSV khu Quản trị (Excel nhận UTF-8)
+
+    function xuatCSV() {
+      if (!luongData) return;
+      var r = luongData, lines = [];
+      lines.push(csvCell('BẢNG LƯƠNG ' + r.tuNgay + ' - ' + r.denNgay + ' — Tân Niên 2000 (xuất từ app Duyệt Tân Niên, chỉ để tham khảo)'));
+      lines.push('');
+      lines.push(['Tên', 'Vị trí', 'Đơn giá/giờ', 'Tổng giờ', 'Thành tiền'].map(csvCell).join(','));
+      (r.tongHop || []).forEach(function (p) {
+        lines.push([p.ten, p.viTri, p.donGia, p.tongGio, p.thanhTien].map(csvCell).join(','));
+      });
+      lines.push(['TỔNG CỘNG', '', '', r.tongGio, r.tongTien].map(csvCell).join(','));
+      lines.push('');
+      lines.push(['Tên', 'Ngày', 'Ca', 'Giờ vào', 'Giờ ra', 'Số giờ', 'Ghi chú'].map(csvCell).join(','));
+      (r.chiTiet || []).forEach(function (c) {
+        lines.push([c.ten, c.ngay, c.ca, c.gioVao, c.gioRa, c.soGio, c.ghiChu].map(csvCell).join(','));
+      });
+      var csv = '\uFEFF' + lines.join('\r\n'); // BOM để Excel nhận UTF-8 tiếng Việt
+      var tenFile = 'luong-TanNien-' + String(r.tuNgay).replace(/\//g, '.') + '_' + String(r.denNgay).replace(/\//g, '.') + '.csv';
+      guiFileCSV(tenFile, csv);
+    }
+
+    // v13 — tách phần đóng gói + gửi file ra dùng chung cho CSV sổ chi trả / kỳ đã chốt
+    function guiFileCSV(tenFile, csv) {
+      var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      // Ưu tiên share sheet (iPhone: gửi thẳng Zalo/Lưu vào Tệp); không có thì tải file thường
+      var file = null;
+      try { file = new File([blob], tenFile, { type: 'text/csv' }); } catch (e) {}
+      if (file && navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+        navigator.share({ files: [file], title: tenFile })['catch'](function () { /* người dùng bấm Hủy — bỏ qua */ });
+        return;
+      }
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = tenFile;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); if (a.parentNode) a.parentNode.removeChild(a); }, 4000);
+    }
+
+    // ===== TAB NHÂN VIÊN (v10.0) — thêm/sửa NV + vị trí & đơn giá.
+    // Server verify mã duyệt mỗi call; PIN không bao giờ nằm trong danh sách, chỉ hiện 1 lần khi thêm/reset.
+    var nvBusy = false;
+    var nvData = null;   // {nhanVien:[{ten,viTri,donGia,active}], viTri:[{ten,donGia}]} của lần tải gần nhất
+
+    // giuThongBao = true khi gọi lại sau một thao tác (giữ dòng báo thành công trên màn)
+    function taiNhanVien(giuThongBao) {
+      if (!mk || nvBusy) return;
+      nvBusy = true;
+      if (giuThongBao !== true) { hideBox($('nvBox')); hideBox($('vtBox')); }
+      // v13 — có cache phiên: dựng lại danh sách ngay + nhãn "đang cập nhật…"
+      var coCache = !!phienCache.nvlist;
+      if (coCache) { nvData = phienCache.nvlist.data; renderNhanVien(nvData); nhanCN('cnNhanVien', true); }
+      else $('nvKQ').innerHTML = '<div class="empty">Đang tải...</div>';
+      goiApi({ api: 'nvlist', mk: mk }, function (res) {
+        nvBusy = false;
+        nhanCN('cnNhanVien', false);
+        if (!res || !res.ok) {
+          if (!coCache) { $('nvKQ').innerHTML = ''; $('vtKQ').innerHTML = ''; $('nvCount').textContent = ''; }
+          showBox($('nvBox'), 'err', (res && res.message) ? res.message : 'Không tải được, thử lại.');
+          return;
+        }
+        nvData = res;
+        phienCache.nvlist = { data: res, luc: Date.now() };
+        renderNhanVien(res);
+      }, function (msg) {
+        nvBusy = false;
+        nhanCN('cnNhanVien', false);
+        if (!coCache) $('nvKQ').innerHTML = '';
+        showBox($('nvBox'), 'err', msg);
+      });
+    }
+
+    // donGia có thể null (chưa đặt) → hiện "—"; server lỡ trả chuỗi thì vẫn hiện được
+    function nvGia(g) {
+      if (g == null || g === '') return '—';
+      var n = Number(g);
+      return (isFinite(n) ? vnd(n) : esc(g)) + ' đ/giờ';
+    }
+
+    // Select vị trí dùng chung (thẻ NV + form thêm NV). Giữ style hệ thống — không appearance:none.
+    function nvSelectVT(id, chon) {
+      var ds = (nvData && nvData.viTri) || [];
+      var co = false, opt = '';
+      ds.forEach(function (v) {
+        var sel = (String(v.ten) === String(chon));
+        if (sel) co = true;
+        opt += '<option value="' + esc(v.ten) + '"' + (sel ? ' selected' : '') + '>' + esc(v.ten) + '</option>';
+      });
+      // NV đang ở vị trí không còn trong bảng đơn giá → vẫn hiện đúng vị trí đang có
+      if (chon && !co) opt = '<option value="' + esc(chon) + '" selected>' + esc(chon) + '</option>' + opt;
+      if (!chon) opt = '<option value="">— Chọn vị trí —</option>' + opt;
+      return '<select class="nvx-sel" id="' + id + '">' + opt + '</select>';
+    }
+
+    function renderNhanVien(res) {
+      var ds = res.nhanVien || [], dsVT = res.viTri || [], dangLam = 0;
+      ds.forEach(function (n) { if (n.active) dangLam++; });
+      $('nvCount').textContent = ds.length ? (dangLam + '/' + ds.length + ' đang làm') : '';
+
+      var html = ds.length ? '' : '<div class="empty">Chưa có nhân viên nào.</div>';
+      ds.forEach(function (n, i) {
+        html += '<div class="nvx-card' + (n.active ? '' : ' off') + '">' +
+          '<div class="nvx-head" onclick="nvMoThe(' + i + ')">' +
+            '<div>' +
+              '<div class="nvx-ten">' + esc(n.ten) + '</div>' +
+              '<div class="nvx-sub">' + esc(n.viTri || '—') + ' · ' + nvGia(n.donGia) + '</div>' +
+              (n.sdt ? '<div class="nvx-sub">📞 ' + esc(n.sdt) + '</div>' : '') +
+              '<div class="nvx-sd" id="nvxsd-' + i + '">' + sdKhoi(n.ten) + '</div>' +
+            '</div>' +
+            '<span class="nvx-badge ' + (n.active ? 'lam' : 'nghi') + '">' + (n.active ? 'Đang làm' : 'Nghỉ') + '</span>' +
+          '</div>' +
+          '<div class="nvx-act" id="nvxa-' + i + '" style="display:none">' +
+            '<label class="nvx-lbl" for="nvxvt-' + i + '">Đổi vị trí</label>' +
+            nvSelectVT('nvxvt-' + i, n.viTri) +
+            '<button type="button" class="btn btn-primary btn-sm" onclick="nvLuuViTri(' + i + ', this)">Lưu vị trí</button>' +
+            '<button type="button" class="btn btn-ghost btn-sm" onclick="nvResetPin(' + i + ', this)">🔑 Reset PIN</button>' +
+            '<button type="button" class="btn btn-ghost btn-sm" onclick="nvDoiActive(' + i + ', this)">' +
+              (n.active ? 'Cho nghỉ' : 'Cho làm lại') + '</button>' +
+            // v12 — chi trả: ghi khoản ứng/trả lương + xem sổ chi của riêng NV này
+            '<div class="nvx-row">' +
+              '<button type="button" class="btn btn-ghost btn-sm" onclick="ctGhiMo(' + i + ')">💵 Ghi chi trả</button>' +
+              '<button type="button" class="btn btn-ghost btn-sm" onclick="ctSoMo(' + i + ')">📒 Sổ chi</button>' +
+            '</div>' +
+            '<div class="sua" id="nvxct-' + i + '" style="display:none">' +
+              '<label class="nvx-lbl" for="ctso-' + i + '">Số tiền (đ)</label>' +
+              '<input type="text" id="ctso-' + i + '" inputmode="numeric" autocomplete="off" placeholder="VD: 500.000" oninput="ctFormat(this)">' +
+              '<label class="nvx-lbl" for="ctloai-' + i + '" style="margin-top:12px">Loại khoản</label>' +
+              '<select class="nvx-sel" id="ctloai-' + i + '">' +
+                '<option value="Ứng">Ứng</option>' +
+                '<option value="Trả lương">Trả lương</option>' +
+              '</select>' +
+              '<label class="nvx-lbl" for="ctgc-' + i + '" style="margin-top:12px">Ghi chú <span style="font-weight:400;color:var(--muted)">— không bắt buộc</span></label>' +
+              '<input type="text" id="ctgc-' + i + '" autocomplete="off" placeholder="VD: chuyển khoản Momo">' +
+              '<div class="nvx-row">' +
+                '<button type="button" class="btn btn-primary btn-sm" onclick="ctGhi(' + i + ', this)">Ghi khoản này</button>' +
+                '<button type="button" class="btn btn-ghost btn-sm" onclick="ctGhiMo(' + i + ')">Đóng</button>' +
+              '</div>' +
+            '</div>' +
+            '<div class="nvx-so" id="nvxso-' + i + '" style="display:none"></div>' +
+          '</div>' +
+        '</div>';
+      });
+      $('nvKQ').innerHTML = html;
+
+      var h2 = dsVT.length ? '' : '<div class="empty" style="padding:12px">Chưa có vị trí nào.</div>';
+      dsVT.forEach(function (v, i) {
+        h2 += '<div class="nvx-vt">' +
+            '<span class="ten2">' + esc(v.ten) + '</span>' +
+            '<span class="gia">' + nvGia(v.donGia) + '</span>' +
+            '<a href="javascript:void(0)" onclick="vtMoSua(' + i + ')">✎ Sửa</a>' +
+          '</div>' +
+          '<div class="sua" id="vts-' + i + '" style="display:none">' +
+            '<label class="nvx-lbl" for="vtg-' + i + '">Đơn giá mới (đ/giờ)</label>' +
+            '<input type="number" inputmode="numeric" id="vtg-' + i + '" value="' + esc(v.donGia == null ? '' : v.donGia) + '">' +
+            '<div class="bu-warn">⚠ Áp cho MỌI nhân viên vị trí này và cả kỳ đang tính — nên đổi vào đầu kỳ.</div>' +
+            '<div class="nvx-row">' +
+              '<button type="button" class="btn btn-primary btn-sm" onclick="vtLuu(' + i + ', this)">Lưu đơn giá</button>' +
+              '<button type="button" class="btn btn-ghost btn-sm" onclick="vtDongSua(' + i + ')">Đóng</button>' +
+            '</div>' +
+          '</div>';
+      });
+      $('vtKQ').innerHTML = h2;
+    }
+
+    function nvMoThe(i) {
+      var el = $('nvxa-' + i);
+      if (el) el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+    }
+
+    function nvItem(i) {
+      var ds = (nvData && nvData.nhanVien) || [];
+      return ds[i] || null;
+    }
+
+    // Gọi 1 mutation: khóa nút → gọi API → báo kết quả vào box → tải lại danh sách.
+    function nvGoi(payload, btn, nhan, box, sau) {
+      if (nvBusy) return;
+      nvBusy = true;
+      var chuCu = btn ? btn.textContent : '';
+      if (btn) { btn.disabled = true; btn.textContent = 'Đang xử lý...'; }
+      hideBox($('nvBox')); hideBox($('vtBox'));
+      goiApi(payload, function (res) {
+        nvBusy = false;
+        if (btn) { btn.disabled = false; btn.textContent = chuCu; }
+        if (!res || !res.ok) {
+          showBox(box, 'err', (res && res.message) ? res.message : 'Không thực hiện được, thử lại.');
+          return;
+        }
+        showBox(box, 'ok', res.message ? res.message : nhan);
+        if (sau) sau(res);
+        taiNhanVien(true);
+      }, function (msg) {
+        nvBusy = false;
+        if (btn) { btn.disabled = false; btn.textContent = chuCu; }
+        showBox(box, 'err', msg);
+      });
+    }
+
+    // PIN chỉ hiện 1 lần — để ở thẻ riêng đầu tab nên tải lại danh sách không xóa mất.
+    function hienPin(ten, pin) {
+      if (!pin) return;
+      $('nvPinKQ').innerHTML =
+        '<div class="nvx-pin">' +
+          '<div class="nvx-pin-lbl">PIN của <b>' + esc(ten) + '</b></div>' +
+          '<div class="nvx-pin-so">' + esc(pin) + '</div>' +
+          '<div class="nvx-pin-note">Gửi PIN này cho nhân viên, chỉ hiện 1 lần.</div>' +
+          '<button type="button" class="btn btn-ghost btn-sm" onclick="anPin()">Đã gửi — ẩn đi</button>' +
+        '</div>';
+    }
+    function anPin() { $('nvPinKQ').innerHTML = ''; }
+
+    function nvLuuViTri(i, btn) {
+      if (nvBusy) return;
+      var n = nvItem(i), sel = $('nvxvt-' + i);
+      if (!n || !sel) return;
+      var vt = sel.value;
+      if (!vt) { showBox($('nvBox'), 'err', 'Chọn vị trí trước khi lưu.'); return; }
+      if (String(vt) === String(n.viTri == null ? '' : n.viTri)) { showBox($('nvBox'), 'err', 'Vị trí không thay đổi.'); return; }
+      if (!window.confirm('Đổi vị trí của ' + n.ten + ' thành "' + vt + '"?\nLương từ nay tính theo đơn giá của vị trí mới.')) return;
+      nvGoi({ api: 'nvsua', mk: mk, ten: n.ten, viTriMoi: vt }, btn, 'Đã đổi vị trí.', $('nvBox'));
+    }
+
+    function nvResetPin(i, btn) {
+      if (nvBusy) return;
+      var n = nvItem(i);
+      if (!n) return;
+      if (!window.confirm('Cấp PIN mới cho ' + n.ten + '?\nPIN cũ sẽ không dùng được nữa — nhớ gửi PIN mới cho nhân viên.')) return;
+      nvGoi({ api: 'nvresetpin', mk: mk, ten: n.ten }, btn, 'Đã cấp PIN mới.', $('nvBox'), function (res) {
+        hienPin(n.ten, res.pin);
+      });
+    }
+
+    function nvDoiActive(i, btn) {
+      if (nvBusy) return;
+      var n = nvItem(i);
+      if (!n) return;
+      var moi = !n.active;
+      var hoi = moi
+        ? ('Cho ' + n.ten + ' đi làm lại?\nNhân viên sẽ hiện lại trong form chấm công.')
+        : ('Cho ' + n.ten + ' nghỉ?\nNhân viên sẽ bị ẩn khỏi form chấm công (không chấm công được nữa).\nDữ liệu chấm công cũ vẫn giữ nguyên.');
+      if (!window.confirm(hoi)) return;
+      nvGoi({ api: 'nvactive', mk: mk, ten: n.ten, active: moi }, btn, moi ? 'Đã cho làm lại.' : 'Đã cho nghỉ.', $('nvBox'));
+    }
+
+    function nvMoThem() {
+      var el = $('nvFormThem');
+      if (!el) return;
+      var mo = (el.style.display === 'none');
+      el.style.display = mo ? 'block' : 'none';
+      if (mo) $('nvThemVT').innerHTML = nvSelectVT('nvThemViTri', '');
+    }
+
+    function nvThem(btn) {
+      if (nvBusy) return;
+      var ten = $('nvThemTen').value.trim();
+      var pin = $('nvThemPin').value.trim();
+      var sdt = $('nvThemSdt').value.trim();
+      var sel = $('nvThemViTri');
+      var vt = sel ? sel.value : '';
+      if (!ten) { showBox($('nvBox'), 'err', 'Nhập tên nhân viên.'); return; }
+      if (pin && !/^\d{4}$/.test(pin)) { showBox($('nvBox'), 'err', 'PIN phải đúng 4 chữ số (hoặc để trống cho máy tự sinh).'); return; }
+      if (sdt && !/^\d{9,11}$/.test(sdt)) { showBox($('nvBox'), 'err', 'SĐT phải là 9-11 chữ số (hoặc để trống).'); return; }
+      if (!vt) { showBox($('nvBox'), 'err', 'Chọn vị trí cho nhân viên.'); return; }
+      if (!window.confirm('Thêm nhân viên "' + ten + '" — vị trí ' + vt + '?' + (pin ? '' : '\nPIN để trống → máy tự sinh 4 số.'))) return;
+      nvGoi({ api: 'nvthem', mk: mk, ten: ten, pin: pin, viTri: vt, sdt: sdt }, btn, 'Đã thêm nhân viên.', $('nvBox'), function (res) {
+        hienPin(ten, res.pin);
+        $('nvThemTen').value = ''; $('nvThemPin').value = ''; $('nvThemSdt').value = '';
+        $('nvFormThem').style.display = 'none';
+      });
+    }
+
+    // ===== Vị trí & đơn giá =====
+    function vtMoSua(i) {
+      var el = $('vts-' + i);
+      if (el) el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+    }
+    function vtDongSua(i) {
+      var el = $('vts-' + i);
+      if (el) el.style.display = 'none';
+    }
+
+    function vtItem(i) {
+      var ds = (nvData && nvData.viTri) || [];
+      return ds[i] || null;
+    }
+
+    function vtSoTien(el) {
+      var s = String(el.value).trim().replace(/[.,\s]/g, '');
+      if (!/^\d+$/.test(s)) return null;
+      var g = Number(s);
+      return (g > 0) ? g : null;
+    }
+
+    function vtLuu(i, btn) {
+      if (nvBusy) return;
+      var v = vtItem(i), el = $('vtg-' + i);
+      if (!v || !el) return;
+      var g = vtSoTien(el);
+      if (g === null) { showBox($('vtBox'), 'err', 'Đơn giá phải là số (chỉ chữ số), lớn hơn 0.'); return; }
+      if (!window.confirm('Đổi đơn giá vị trí "' + v.ten + '" thành ' + vnd(g) + ' đ/giờ?\nÁp cho MỌI nhân viên vị trí này và cả kỳ đang tính — nên đổi vào đầu kỳ.')) return;
+      nvGoi({ api: 'vitrisua', mk: mk, viTri: v.ten, donGia: g }, btn, 'Đã đổi đơn giá.', $('vtBox'));
+    }
+
+    function vtMoThem() {
+      var el = $('vtFormThem');
+      if (el) el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+    }
+
+    function vtThem(btn) {
+      if (nvBusy) return;
+      var ten = $('vtThemTen').value.trim();
+      var g = vtSoTien($('vtThemGia'));
+      if (!ten) { showBox($('vtBox'), 'err', 'Nhập tên vị trí.'); return; }
+      if (g === null) { showBox($('vtBox'), 'err', 'Đơn giá phải là số (chỉ chữ số), lớn hơn 0.'); return; }
+      if (!window.confirm('Thêm vị trí "' + ten + '" — ' + vnd(g) + ' đ/giờ?')) return;
+      nvGoi({ api: 'vitrithem', mk: mk, viTri: ten, donGia: g }, btn, 'Đã thêm vị trí.', $('vtBox'), function () {
+        $('vtThemTen').value = ''; $('vtThemGia').value = '';
+        $('vtFormThem').style.display = 'none';
+      });
+    }
+
+    // ===== v12 — SỐ DƯ CHI TRẢ (api 'sodu') =====
+    // Gọi SONG SONG nvlist khi mở tab Nhân viên. Ai về trước không quan trọng:
+    // renderNhanVien đọc sdMap để dựng khối, sdVaThe() vá lại khối khi sodu về sau.
+    var sdBusy = false;
+    var sdMap = null;    // null = chưa có số liệu; {} = đã gọi nhưng không có/không lấy được
+
+    // {ds:[...]} -> map theo tên (dùng cho cả response 'sodu' và khối soDu của 'bootstrap')
+    function sdMapTu(data) {
+      var m = {};
+      ((data && data.ds) || []).forEach(function (s) {
+        m[s.ten] = {
+          tong: (Number(s.tongChot) || 0) + (Number(s.congDangChay) || 0),
+          daChi: Number(s.daChi) || 0,
+          conLai: Number(s.conLai) || 0
+        };
+      });
+      return m;
+    }
+
+    function sdTai() {
+      if (!mk || sdBusy) return;
+      sdBusy = true;
+      // v13 — có cache phiên thì hiện số dư cũ ngay, khỏi để "Đang tải số dư..."
+      if (phienCache.sodu) { sdMap = sdMapTu(phienCache.sodu.data); sdVaThe(); }
+      goiApi({ api: 'sodu', mk: mk }, function (res) {
+        sdBusy = false;
+        // server chưa có api 'sodu' → sdMap = {} → khối ẩn, tab Nhân viên vẫn chạy như cũ
+        var m = (res && res.ok) ? sdMapTu(res) : {};
+        if (res && res.ok) {
+          phienCache.sodu = { data: { ds: res.ds || [] }, luc: Date.now() };
+          capNhatTongQuan();
+        }
+        sdMap = m;
+        sdVaThe();
+      }, function () {
+        sdBusy = false;
+        if (!phienCache.sodu) sdMap = {};   // v13 — lỗi mạng mà có cache thì giữ số cũ trên màn
+        sdVaThe();
+      });
+    }
+
+    // HTML bên trong khối số dư của 1 NV ('' = không hiện gì)
+    function sdKhoi(ten) {
+      if (!sdMap) return '<span class="nvx-sd-cho">Đang tải số dư...</span>';
+      var s = sdMap[ten];
+      if (!s) return '';
+      var z = s.conLai, cls = 'nvx-conlai', txt;
+      if (z < 0) { cls += ' am'; txt = 'Ứng dư ' + vnd(-z) + ' đ'; }
+      else if (z === 0) { cls += ' khong'; txt = 'CÒN PHẢI TRẢ: 0 đ'; }
+      else { txt = 'CÒN PHẢI TRẢ: ' + vnd(z) + ' đ'; }
+      return 'Tổng công <b>' + vnd(s.tong) + ' đ</b> · Đã chi ' + vnd(s.daChi) + ' đ' +
+             '<span class="' + cls + '">' + txt + '</span>';
+    }
+
+    function sdVaThe() {
+      var ds = (nvData && nvData.nhanVien) || [];
+      ds.forEach(function (n, i) {
+        var el = $('nvxsd-' + i);
+        if (el) el.innerHTML = sdKhoi(n.ten);
+      });
+    }
+
+    // ===== v12 — GHI CHI TRẢ + SỔ CHI (api 'chitrathem' / 'chitralist' / 'chitrahuy') =====
+    var ctSoData = {};   // i (chỉ số thẻ NV) -> danh sách khoản của lần tải gần nhất
+
+    // Format nghìn khi gõ (cùng quy ước với vtSoTien: bỏ . , khoảng trắng khi đọc lại)
+    function ctFormat(el) {
+      var s = String(el.value).replace(/\D/g, '');
+      el.value = s ? Number(s).toLocaleString('vi-VN') : '';
+    }
+
+    function ctGhiMo(i) {
+      var el = $('nvxct-' + i);
+      if (el) el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+    }
+
+    function ctGhi(i, btn) {
+      if (nvBusy) return;
+      var n = nvItem(i), el = $('ctso-' + i), selL = $('ctloai-' + i), elG = $('ctgc-' + i);
+      if (!n || !el || !selL) return;
+      var so = vtSoTien(el);
+      if (so === null) { showBox($('nvBox'), 'err', 'Số tiền phải là số (chỉ chữ số), lớn hơn 0.'); return; }
+      var loai = selL.value;
+      var gc = elG ? String(elG.value).trim() : '';
+      if (gc.length > 200) { showBox($('nvBox'), 'err', 'Ghi chú tối đa 200 ký tự.'); return; }
+      if (!window.confirm('Ghi khoản "' + loai + '" cho ' + n.ten + ': ' + vnd(so) + ' đ?\nKhoản này trừ vào tiền còn phải trả của nhân viên.')) return;
+      nvGoi({ api: 'chitrathem', mk: mk, ten: n.ten, soTien: so, loai: loai, ghiChu: gc }, btn, 'Đã ghi khoản chi trả.', $('nvBox'), function () {
+        el.value = ''; if (elG) elG.value = '';
+        sdTai();   // số dư đổi → nạp lại (nvlist do nvGoi tự nạp lại)
+      });
+    }
+
+    function ctSoMo(i) {
+      var el = $('nvxso-' + i);
+      if (!el) return;
+      if (el.style.display === 'block') { el.style.display = 'none'; return; }
+      el.style.display = 'block';
+      ctSoTai(i);
+    }
+
+    function ctSoTai(i) {
+      var n = nvItem(i), el = $('nvxso-' + i);
+      if (!n || !el) return;
+      el.innerHTML = '<div class="hint">Đang tải sổ chi...</div>';
+      goiApi({ api: 'chitralist', mk: mk, ten: n.ten }, function (res) {
+        if (!res || !res.ok) {
+          el.innerHTML = '<div class="hint">' + esc((res && res.message) ? res.message : 'Không tải được sổ chi.') + '</div>';
+          return;
+        }
+        ctSoData[i] = res.ds || [];
+        ctSoRender(i);
+      }, function (msg) {
+        el.innerHTML = '<div class="hint">' + esc(msg) + '</div>';
+      });
+    }
+
+    function ctSoRender(i) {
+      var el = $('nvxso-' + i), ds = ctSoData[i] || [];
+      if (!el) return;
+      if (!ds.length) { el.innerHTML = '<div class="hint">Chưa có khoản chi trả nào.</div>'; return; }
+      el.innerHTML = ds.map(function (x, k) {
+        return '<div class="r' + (x.huy ? ' huy' : '') + '">' +
+          '<span class="n">' + esc(x.ngay) + '</span>' +
+          '<span class="l">' + esc(x.loai) + '</span>' +
+          '<span class="s">' + vnd(Number(x.soTien) || 0) + ' đ</span>' +
+          (x.huy ? '' : '<button type="button" class="btn btn-reject btn-sm" onclick="ctHuy(' + i + ', ' + k + ', this)">Hủy</button>') +
+          (x.ghiChu ? '<span class="gc">' + esc(x.ghiChu) + '</span>' : '') +
+          '</div>';
+      }).join('');
+    }
+
+    function ctHuy(i, k, btn) {
+      if (nvBusy) return;
+      var x = (ctSoData[i] || [])[k];
+      if (!x) return;
+      if (!window.confirm('Hủy khoản ' + x.loai + ' ' + vnd(Number(x.soTien) || 0) + ' đ ngày ' + x.ngay + '?\nKhoản hủy không tính vào sổ.')) return;
+      nvBusy = true;
+      var chuCu = btn.textContent;
+      btn.disabled = true; btn.textContent = '...';
+      hideBox($('nvBox'));
+      goiApi({ api: 'chitrahuy', mk: mk, row: x.row }, function (res) {
+        nvBusy = false;
+        btn.disabled = false; btn.textContent = chuCu;
+        if (!res || !res.ok) { showBox($('nvBox'), 'err', (res && res.message) ? res.message : 'Không hủy được, thử lại.'); return; }
+        showBox($('nvBox'), 'ok', res.message ? res.message : 'Đã hủy khoản chi.');
+        ctSoTai(i);   // nạp lại sổ tại chỗ (giữ nguyên thẻ đang mở)
+        sdTai();      // số dư đổi theo
+      }, function (msg) {
+        nvBusy = false;
+        btn.disabled = false; btn.textContent = chuCu;
+        showBox($('nvBox'), 'err', msg);
+      });
+    }
+
+    // ===== v12 — CHỐT KỲ (api 'kydachot' / 'chotky') =====
+    var ckBusy = false;
+
+    function ckTai() {
+      if (!mk || ckBusy) return;
+      ckBusy = true;
+      goiApi({ api: 'kydachot', mk: mk }, function (res) {
+        ckBusy = false;
+        // server chưa có api → coi như chưa chốt kỳ nào, không phá tab Tính lương
+        ckRender((res && res.ok) ? (res.dsKy || []) : []);
+      }, function () {
+        ckBusy = false;
+        ckRender([]);
+      });
+    }
+
+    function ckRender(dsKy) {
+      if (!dsKy.length) { $('ckKQ').innerHTML = '<div class="hint">Chưa chốt kỳ nào.</div>'; return; }
+      $('ckKQ').innerHTML = dsKy.map(function (k) {
+        return '<div class="ck-row">' +
+          '<span class="ky2">' + esc(k.tu) + ' – ' + esc(k.den) + '</span>' +
+          '<span class="tien2">' + vnd(Number(k.tongTien) || 0) + ' đ</span>' +
+          '<span class="luc2">' + esc(k.soNV) + ' NV · chốt lúc ' + esc(k.chotLuc) + '</span>' +
+          '</div>';
+      }).join('');
+    }
+
+    function ckMoForm() {
+      var el = $('ckForm');
+      if (!el) return;
+      var mo = (el.style.display === 'none');
+      el.style.display = mo ? 'block' : 'none';
+      // prefill KỲ TRƯỚC (kỳ vừa kết thúc) — không phải kỳ đang chạy
+      if (mo && !$('ckTu').value && !$('ckDen').value) {
+        var r = kyRange(-1);
+        $('ckTu').value = isoLocal(r[0]);
+        $('ckDen').value = isoLocal(r[1]);
+      }
+    }
+
+    function ckChot(btn) {
+      if (ckBusy) return;
+      var tu = $('ckTu').value, den = $('ckDen').value;
+      if (!tu || !den) { showBox($('ckBox'), 'err', 'Chọn đủ Kỳ từ ngày và Kỳ đến ngày.'); return; }
+      if (tu > den) { showBox($('ckBox'), 'err', 'Kỳ từ ngày phải trước hoặc bằng Kỳ đến ngày.'); return; }
+      if (!window.confirm('Chốt kỳ ' + tu + ' → ' + den + '?\nSố kỳ này sẽ đóng băng, đổi đơn giá sau không ảnh hưởng.\nKhông hủy được trên app.')) return;
+      ckBusy = true;
+      var chuCu = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Đang chốt...';
+      hideBox($('ckBox'));
+      goiApi({ api: 'chotky', mk: mk, tu: tu, den: den }, function (res) {
+        ckBusy = false;
+        btn.disabled = false; btn.textContent = chuCu;
+        if (!res || !res.ok) { showBox($('ckBox'), 'err', (res && res.message) ? res.message : 'Không chốt được, thử lại.'); return; }
+        showBox($('ckBox'), 'ok', res.message ? res.message : 'Đã chốt kỳ.');
+        $('ckKetQua').innerHTML = '<div class="tong">Đã chốt <b>' + esc(tu) + ' – ' + esc(den) + '</b>: ' +
+          esc(res.soNV) + ' nhân viên · <b>' + vnd(Number(res.tongTien) || 0) + ' đ</b>' +
+          (res.tongGio == null ? '' : (' · ' + esc(res.tongGio) + ' giờ')) +
+          (res.soCanhBao ? '<div class="warntxt">⚠ kỳ có ' + esc(res.soCanhBao) + ' dòng cần kiểm tra — đã chốt theo số hiện tại.</div>' : '') +
+          '</div>';
+        $('ckForm').style.display = 'none';
+        ckTai();
+      }, function (msg) {
+        ckBusy = false;
+        btn.disabled = false; btn.textContent = chuCu;
+        showBox($('ckBox'), 'err', msg);
+      });
+    }
+
+    // ===== v13 — KHU ⚙️ QUẢN TRỊ (nhật ký / CSV toàn sổ / sao lưu) =====
+    var qtBusy = false;
+
+    // hậu tố ngày cho tên file: yyyyMMdd theo giờ máy
+    function ngayFile() {
+      var d = new Date();
+      return d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2);
+    }
+
+    function qtNhatKyMo() {
+      var el = $('qtNhatKy');
+      if (!el) return;
+      if (el.style.display === 'block') { el.style.display = 'none'; return; }
+      el.style.display = 'block';
+      qtNhatKyTai();
+    }
+
+    function qtNhatKyTai() {
+      if (!mk) return;
+      var el = $('qtNhatKy');
+      el.innerHTML = '<div class="hint">Đang tải nhật ký...</div>';
+      goiApi({ api: 'nhatky', mk: mk, soDong: 50 }, function (res) {
+        if (!res || !res.ok) {
+          el.innerHTML = '<div class="hint">' + esc((res && res.message) ? res.message : 'Không tải được nhật ký.') + '</div>';
+          return;
+        }
+        var ds = res.ds || [];
+        if (!ds.length) { el.innerHTML = '<div class="hint">Chưa có dòng nhật ký nào.</div>'; return; }
+        el.innerHTML = ds.map(function (x) {
+          return '<div class="r2"><span class="n2">' + esc(x.ngay) + '</span>' +
+                 '<span class="h2x">' + esc(x.hanhDong) + '</span>' +
+                 (x.chiTiet ? ' · ' + esc(x.chiTiet) : '') + '</div>';
+        }).join('');
+      }, function (msg) {
+        el.innerHTML = '<div class="hint">' + esc(msg) + '</div>';
+      });
+    }
+
+    // Gọi 1 api ĐỌC toàn sổ rồi sinh CSV ngay trên máy (không đụng dữ liệu).
+    function qtTaiCSV(api, btn, dungLines, tenFile) {
+      if (!mk || qtBusy) return;
+      qtBusy = true;
+      var chuCu = btn ? btn.textContent : '';
+      if (btn) { btn.disabled = true; btn.textContent = 'Đang tải...'; }
+      hideBox($('qtBox'));
+      goiApi({ api: api, mk: mk }, function (res) {
+        qtBusy = false;
+        if (btn) { btn.disabled = false; btn.textContent = chuCu; }
+        if (!res || !res.ok) {
+          showBox($('qtBox'), 'err', (res && res.message) ? res.message : 'Không tải được, thử lại.');
+          return;
+        }
+        var ds = res.ds || [];
+        if (!ds.length) { showBox($('qtBox'), 'err', 'Chưa có dữ liệu để xuất.'); return; }
+        guiFileCSV(tenFile, CSV_BOM + dungLines(ds).join('\r\n'));
+        showBox($('qtBox'), 'ok', 'Đã xuất ' + ds.length + ' dòng — file ' + tenFile);
+      }, function (msg) {
+        qtBusy = false;
+        if (btn) { btn.disabled = false; btn.textContent = chuCu; }
+        showBox($('qtBox'), 'err', msg);
+      });
+    }
+
+    function qtCsvChiTra(btn) {
+      qtTaiCSV('chitraall', btn, function (ds) {
+        var lines = [];
+        lines.push(csvCell('SỔ CHI TRẢ — Tân Niên 2000 (xuất từ app Duyệt Tân Niên)'));
+        lines.push('');
+        lines.push(['Ngày', 'Tên', 'Số tiền', 'Loại', 'Ghi chú', 'Trạng thái'].map(csvCell).join(','));
+        ds.forEach(function (x) {
+          lines.push([x.ngay, x.ten, x.soTien, x.loai, x.ghiChu, (x.huy ? 'Đã hủy' : '')].map(csvCell).join(','));
+        });
+        return lines;
+      }, 'so-chi-tra-TanNien-' + ngayFile() + '.csv');
+    }
+
+    function qtCsvKyChot(btn) {
+      qtTaiCSV('kychotall', btn, function (ds) {
+        var lines = [];
+        lines.push(csvCell('KỲ ĐÃ CHỐT — Tân Niên 2000 (xuất từ app Duyệt Tân Niên)'));
+        lines.push('');
+        lines.push(['Từ', 'Đến', 'Tên', 'Vị trí', 'Đơn giá/giờ', 'Tổng giờ', 'Thành tiền', 'Chốt lúc'].map(csvCell).join(','));
+        ds.forEach(function (k) {
+          lines.push([k.tu, k.den, k.ten, k.viTri, k.donGia, k.tongGio, k.thanhTien, k.chotLuc].map(csvCell).join(','));
+        });
+        return lines;
+      }, 'ky-da-chot-TanNien-' + ngayFile() + '.csv');
+    }
+
+    // Sao lưu là lệnh GHI → goiApi KHÔNG tự thử lại (tránh tạo 2 bản backup).
+    function qtBackup(btn) {
+      if (!mk || qtBusy) return;
+      if (!window.confirm('Sao lưu toàn bộ Sheet chấm công ngay bây giờ?\nMáy tạo 1 bản copy vào folder sao lưu và chỉ giữ 8 bản mới nhất.')) return;
+      qtBusy = true;
+      var chuCu = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Đang sao lưu...';
+      hideBox($('qtBox'));
+      goiApi({ api: 'backup', mk: mk }, function (res) {
+        qtBusy = false;
+        btn.disabled = false; btn.textContent = chuCu;
+        if (!res || !res.ok) { showBox($('qtBox'), 'err', (res && res.message) ? res.message : 'Không sao lưu được, thử lại.'); return; }
+        showBox($('qtBox'), 'ok', '✅ Đã sao lưu: ' + (res.tenFile || '(không rõ tên file)') +
+          (res.tongBan == null ? '' : (' · đang giữ ' + res.tongBan + ' bản')));
+      }, function (msg) {
+        qtBusy = false;
+        btn.disabled = false; btn.textContent = chuCu;
+        showBox($('qtBox'), 'err', msg);
+      });
+    }
+
+    // ===== Vỏ app: service worker + ẩn màn hình chờ khi UI đã sẵn sàng =====
+    if ('serviceWorker' in navigator) {
+      try { navigator.serviceWorker.register('sw.js'); } catch (e) { /* trình duyệt chặn SW — bỏ qua */ }
+    }
+    function anSplash() {
+      var el = $('splash');
+      if (el) el.className = 'splash hide';
+    }
+    window.addEventListener('load', anSplash);
+    setTimeout(anSplash, 1200);   // font về trễ cũng không giữ màn chờ quá lâu
+  </script>
+</body>
+</html>
