@@ -906,6 +906,13 @@
       (res.chiTiet || []).forEach(function (c) { (ctMap[c.ten] = ctMap[c.ten] || []).push(c); });
       var coNam = String(res.tuNgay).slice(-4) !== String(res.denNgay).slice(-4); // khoảng vắt năm → hiện thêm năm
       tongHop.forEach(function (p) {
+        // v14 — NV lương tháng: giờ chỉ để tham khảo. Server cũ thiếu field → hiện đơn giá/giờ như cũ.
+        var mucLuong = vnd(p.donGia) + ' đ/giờ';
+        if (p.kieuLuong === 'thang') {
+          var hs = Number(p.heSoKy);
+          mucLuong = 'Lương tháng · ' + esc(p.tongGio) + ' giờ (tham khảo)' +
+            ((isFinite(hs) && hs !== 1) ? ' × hệ số ' + esc(p.heSoKy) : '');
+        }
         var rows = (ctMap[p.ten] || []).map(function (c) {
           var ngay = String(c.ngay).slice(8, 10) + '/' + String(c.ngay).slice(5, 7) + (coNam ? '/' + String(c.ngay).slice(2, 4) : '');
           return '<div class="ctrow' + (c.loi ? ' loi' : '') + '">' +
@@ -918,7 +925,7 @@
         html += '<details class="nv"><summary>' +
           '<span class="who">' + esc(p.ten) + '</span>' +
           '<span class="money">' + vnd(p.thanhTien) + ' đ</span>' +
-          '<span class="sub2">' + esc(p.viTri || '—') + ' · ' + vnd(p.donGia) + ' đ/giờ' + (p.noMatch ? ' <span class="warntxt">⚠ chưa khớp đơn giá</span>' : '') + '</span>' +
+          '<span class="sub2">' + esc(p.viTri || '—') + ' · ' + mucLuong + (p.noMatch ? ' <span class="warntxt">⚠ chưa khớp đơn giá</span>' : '') + '</span>' +
           '<span class="gio">' + esc(p.tongGio) + ' giờ</span>' +
           '</summary>' + rows + '</details>';
       });
@@ -1007,6 +1014,16 @@
       return (isFinite(n) ? vnd(n) : esc(g)) + ' đ/giờ';
     }
 
+    // v14 — NV lương tháng: hiện "Lương tháng X đ" thay đơn giá/giờ.
+    // Server cũ chưa trả kieuLuong/luongThang → tự động về hiển thị cũ.
+    function nvMucLuong(n) {
+      if (n && n.kieuLuong === 'thang') {
+        var lt = Number(n.luongThang);
+        if (isFinite(lt) && lt > 0) return 'Lương tháng ' + vnd(lt) + ' đ';
+      }
+      return nvGia(n ? n.donGia : null);
+    }
+
     // Select vị trí dùng chung (thẻ NV + form thêm NV). Giữ style hệ thống — không appearance:none.
     function nvSelectVT(id, chon) {
       var ds = (nvData && nvData.viTri) || [];
@@ -1033,7 +1050,7 @@
           '<div class="nvx-head" onclick="nvMoThe(' + i + ')">' +
             '<div>' +
               '<div class="nvx-ten">' + esc(n.ten) + '</div>' +
-              '<div class="nvx-sub">' + esc(n.viTri || '—') + ' · ' + nvGia(n.donGia) + '</div>' +
+              '<div class="nvx-sub">' + esc(n.viTri || '—') + ' · ' + nvMucLuong(n) + '</div>' +
               (n.sdt ? '<div class="nvx-sub">📞 ' + esc(n.sdt) + '</div>' : '') +
               '<div class="nvx-sd" id="nvxsd-' + i + '">' + sdKhoi(n.ten) + '</div>' +
             '</div>' +
@@ -1058,6 +1075,7 @@
               '<select class="nvx-sel" id="ctloai-' + i + '">' +
                 '<option value="Ứng">Ứng</option>' +
                 '<option value="Trả lương">Trả lương</option>' +
+                '<option value="Trừ lương">Trừ lương</option>' +
               '</select>' +
               '<label class="nvx-lbl" for="ctgc-' + i + '" style="margin-top:12px">Ghi chú <span style="font-weight:400;color:var(--muted)">— không bắt buộc</span></label>' +
               '<input type="text" id="ctgc-' + i + '" autocomplete="off" placeholder="VD: chuyển khoản Momo">' +
