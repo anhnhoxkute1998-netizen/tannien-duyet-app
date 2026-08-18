@@ -12,6 +12,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tân Niên 2000">
+  <!-- v15 Part C — cắt bắt tay TLS tới Apps Script (2 host của kiến trúc 302 kép) -->
+  <link rel="preconnect" href="https://script.google.com" crossorigin>
+  <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet">
   <style>
@@ -254,6 +257,11 @@
         <label class="lbl" for="mk">Mã duyệt <span style="color:var(--err)">*</span></label>
         <input id="mk" type="password" inputmode="numeric" autocomplete="off" placeholder="Nhập mã duyệt">
       </div>
+      <!-- v15 — nhớ phiên: mặc định TẮT. Bật để lần sau mở app thấy ngay số liệu (không chờ mạng). -->
+      <div class="field" style="display:flex;align-items:center;gap:9px;margin-top:14px">
+        <input type="checkbox" id="nhoMay" style="width:20px;height:20px;min-height:0;flex:0 0 auto;margin:0">
+        <label for="nhoMay" style="font-size:14px;font-weight:600;margin:0;line-height:1.5">Nhớ máy này (mở nhanh lần sau)</label>
+      </div>
       <div class="field">
         <button type="button" class="btn btn-primary" id="btnOpen" onclick="doOpen()">Mở trang duyệt</button>
       </div>
@@ -409,21 +417,33 @@
         <button type="button" class="btn btn-ghost" onclick="qtBackup(this)">💾 Sao lưu ngay</button>
       </div>
       <div class="hint">Sao lưu tự động hàng tuần: nhờ đệ/đại ca cài trigger <b>backupTuan</b> trong Apps Script (1 lần).</div>
+
+      <!-- v15 — đăng xuất / quên máy này: xóa sạch mã + cache đã nhớ trên máy này -->
+      <div class="field">
+        <button type="button" class="btn btn-ghost" onclick="dangXuat()">🚪 Đăng xuất / Quên máy này</button>
+      </div>
+      <div class="hint">Xóa mã đã nhớ trên máy này, quay về màn khóa. Máy khác không ảnh hưởng.</div>
     </div>
   </div>
 
   <script>
     // ===== App Duyệt Tân Niên — SPA tĩnh trên GitHub Pages, gọi Apps Script qua API JSON.
-    // Bảo mật: mã duyệt KHÔNG lưu ở client (không localStorage/cookie), chỉ giữ trong RAM
-    // và gửi kèm mỗi thao tác; server verify lại mỗi call.
+    // Bảo mật: mã duyệt mặc định CHỈ giữ RAM; khi chủ bật "Nhớ máy này" (v15) mới lưu localStorage
+    // để mở nhanh lần sau — đánh đổi đã chốt ở spec (mối đe dọa là người cầm máy đã mở khóa).
+    // server verify lại mã mỗi call.
     var API_URL = 'https://script.google.com/macros/s/AKfycbwumSKnNnrX8B6K0CYA2wBBHUxvhzhcdSVqIB6gfxzdx-fb8_fe3rZ3fzXThCjV_rY/exec';
 
-    var mk = '';           // giữ trong RAM, không lưu localStorage
+    var mk = '';           // RAM; chỉ lưu localStorage khi bật "Nhớ máy này" (v15)
     var ngayChot = '';     // lấy từ response 'bootstrap' lúc mở khóa
     var tenQuan = '';      // v13 — bootstrap trả về (dùng cho tên file xuất/nhãn sau này)
     var busy = false;
 
-    // v13 — cache phiên CHỈ RAM (không localStorage): mở tab có cache → render ngay rồi tải ngầm.
+    // v15 — nhớ phiên (localStorage opt-in)
+    var epoch = 0;             // chống race logout: mỗi lần logout/đổi-mã tăng; call nền cũ về sau bị vứt
+    var nhoMay = false;        // true = máy này đang nhớ phiên (bật checkbox hoặc vừa khôi phục)
+    var daRefreshSodu = false; // đã có ≥1 lần refresh sodu THÀNH CÔNG trong phiên chưa (guard chi trả)
+
+    // v13 — cache phiên RAM đang dùng để render; v15 mirror sang localStorage khi bật "Nhớ máy này".
     var phienCache = { ticket: null, homnay: null, nvlist: null, sodu: null };   // mỗi ô: {data, luc}
 
     // v13 — api ĐỌC được tự thử lại 1 lần khi lỗi mạng; api GHI thì KHÔNG (tránh ghi trùng).
@@ -462,7 +482,15 @@
         var data = null;
         try { data = JSON.parse(txt); } catch (e) { data = null; }
         // Google trả trang lỗi HTML khi hệ thống bận / script lỗi → không parse được JSON
-        if (!data) { onErr('Hệ thống bận, thử lại.'); return; }
+        if (!data) {
+          // v15.1 — trang BẬN (không JSON) với API ĐỌC: thử lại đúng 1 lần sau 1.5s (server thường
+          // đã ấm lượt sau). API GHI không nằm trong API_DOC → KHÔNG retry, tránh ghi trùng tiền.
+          if (daThu !== true && laApiDoc(payload && payload.api)) {
+            setTimeout(function () { goiApi(payload, onOk, onErr, true); }, 1500);
+            return;
+          }
+          onErr('Hệ thống bận, thử lại.'); return;
+        }
         onOk(data);
       })['catch'](function () {
         clearTimeout(timer);
@@ -488,9 +516,12 @@
     }
 
     // Nhãn "đang cập nhật…" cạnh nút Tải lại của từng tab
+    // (khi HIỆN thì đặt lại text mặc định — vì v15 có lúc mượn span này để ghi "Số liệu lúc HH:MM…")
     function nhanCN(id, hien) {
       var el = $(id);
-      if (el) el.style.display = hien ? 'inline' : 'none';
+      if (!el) return;
+      if (hien) el.textContent = 'đang cập nhật…';
+      el.style.display = hien ? 'inline' : 'none';
     }
 
     // Gọi mỗi khi tickets / homnay / sodu có data mới (và sau khi xóa thẻ ticket tại chỗ).
@@ -511,6 +542,204 @@
 
     $('mk').addEventListener('keydown', function (e) { if (e.key === 'Enter') doOpen(); });
 
+    // ===== v15 — NHỚ PHIÊN (localStorage) + refresh nền cache-first =====
+    // Chỉ ghi cache khi bật "Nhớ máy này"; mã nằm trên máy (đánh đổi bảo mật đã chốt ở spec).
+    var CACHE_KEY = 'cc_TN_v1';   // namespace theo quán + version
+
+    function gioHM(ts) {
+      var d = new Date(Number(ts) || Date.now());
+      return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+    }
+    function gioHMNow() { return gioHM(Date.now()); }
+
+    // --- Đọc/ghi localStorage: bọc try/catch, không bao giờ ném ra ngoài ---
+    function docPhien() {
+      try {
+        var raw = localStorage.getItem(CACHE_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) { return null; }
+    }
+    function ghiPhien(o) { try { localStorage.setItem(CACHE_KEY, JSON.stringify(o)); } catch (e) {} }
+    function xoaPhien() { try { localStorage.removeItem(CACHE_KEY); } catch (e) {} }
+
+    // Validate shape: bắt buộc có mã + slice tickets hợp lệ; homnay/sodu có thể chưa kịp lưu.
+    function phienHopLe(o) {
+      return !!o && typeof o === 'object' &&
+        typeof o.mk === 'string' && o.mk.length > 0 &&
+        !!o.tickets && Object.prototype.toString.call(o.tickets.tickets) === '[object Array]';
+    }
+
+    // Lưu FULL lúc đăng nhập (homnay/sodu để trống, các call nền vá sau bằng luuSlice).
+    function luuPhienDayDu(ticketsRes) {
+      if (!nhoMay) return;
+      ghiPhien({
+        mk: mk, tenQuan: tenQuan, ngayChot: ngayChot,
+        tickets: ticketsRes, tsTickets: Date.now(),
+        homnay: null, tsHomnay: 0,
+        sodu: null, tsSodu: 0
+      });
+    }
+    // ts theo TỪNG slice: mỗi call nền thành công chỉ ghi slice + ts của nó, KHÔNG đè slice khác.
+    function luuSlice(loai, data) {
+      if (!nhoMay) return;
+      var o = docPhien() || { mk: mk, tenQuan: tenQuan, ngayChot: ngayChot };
+      o.mk = mk; o.tenQuan = tenQuan; o.ngayChot = ngayChot;
+      var now = Date.now();
+      if (loai === 'tickets') { o.tickets = data; o.tsTickets = now; }
+      else if (loai === 'homnay') { o.homnay = data; o.tsHomnay = now; }
+      else if (loai === 'sodu') { o.sodu = data; o.tsSodu = now; }
+      ghiPhien(o);
+    }
+
+    // --- Hàm THUẦN quyết định (mirror y hệt trong tests/test-nho-phien.js) ---
+    // CHỈ true khi mã THẬT SỰ sai. Khóa 10' / chưa đặt / lỗi hệ thống KHÔNG tính (mã chủ vẫn đúng).
+    function laSaiMaThat(res) {
+      return !!res && res.ok === false && res.message === 'Sai mã duyệt.';
+    }
+    // 'xoa' = mã đã đổi → đăng xuất; 'giu' = giữ mã + cache, chỉ toast.
+    function quyetDinhSauRefresh(res) {
+      return laSaiMaThat(res) ? 'xoa' : 'giu';
+    }
+    // Epoch guard: true = kết quả còn hiệu lực (được ghi cache); false = vứt (đã logout giữa chừng).
+    function epochConHieuLuc(epochLucGoi, epochHienTai) {
+      return epochLucGoi === epochHienTai;
+    }
+
+    // Nhãn "Số liệu lúc HH:MM · đang cập nhật…" (khu >24h thêm dấu quá hạn để chủ biết là số cũ).
+    function nhanCacheLuc(id, luc) {
+      var el = $(id);
+      if (!el) return;
+      var qua = (Date.now() - (Number(luc) || 0)) > 86400000;
+      el.textContent = 'Số liệu lúc ' + gioHM(luc) + (qua ? ' (hơn 1 ngày)' : '') + ' · đang cập nhật…';
+      el.style.display = 'inline';
+    }
+    function toastChuaCapNhat() {
+      // Giữ mã + cache, chỉ báo chưa cập nhật (KHÔNG đăng xuất — đây là điểm dễ sai nhất của spec).
+      showBox($('boardBox'), 'err', 'Chưa cập nhật được lúc ' + gioHMNow() + ' — đang hiện số liệu đã lưu.');
+    }
+
+    // Về màn khóa: ẩn hết tab + dọn cache RAM để không lộ số cũ sau đăng xuất.
+    function veManKhoa() {
+      $('tabs').style.display = 'none';
+      $('tongquan').style.display = 'none';
+      $('board').style.display = 'none';
+      $('homnay').style.display = 'none';
+      $('luong').style.display = 'none';
+      $('nhanvien').style.display = 'none';
+      $('lock').style.display = 'block';
+      phienCache = { ticket: null, homnay: null, nvlist: null, sodu: null };
+      sdMap = null; nvData = null; daRefreshSodu = false;
+    }
+    // Mã đã đổi trong Sheet (laSaiMaThat) → xóa sạch mã + cache, về màn khóa, báo đăng nhập lại.
+    function dangXuatDoiMa() {
+      xoaPhien(); epoch++; mk = ''; nhoMay = false;
+      veManKhoa();
+      $('mk').value = '';   // xóa mã cũ đã sai, tránh chủ bấm lại cộng dồn counter khóa 10'
+      showBox($('lockBox'), 'err', 'Mã đã đổi, đăng nhập lại.');
+    }
+    // Nút "Đăng xuất / Quên máy này".
+    function dangXuat() {
+      if (!window.confirm('Đăng xuất và quên máy này?\nLần sau mở app phải nhập lại mã duyệt.')) return;
+      xoaPhien(); epoch++; mk = ''; nhoMay = false;
+      veManKhoa();
+      $('mk').value = '';
+      hideBox($('lockBox'));
+    }
+
+    // Reconcile theo row (KHÔNG thay list mù): đang mở khối "Sửa giờ" mà ticket còn đó → giữ input;
+    // ticket đang mở đã biến mất sau refresh → vẽ lại + báo (tránh duyệt vào "ticket ma").
+    function reconcileTickets(res) {
+      var moiRows = {};
+      ((res && res.tickets) || []).forEach(function (t) { moiRows[String(t.row)] = 1; });
+      var soMo = 0, bienMat = false;
+      Array.prototype.forEach.call(document.querySelectorAll('#list .sua'), function (el) {
+        if (el.style.display && el.style.display !== 'none') {
+          soMo++;
+          if (!moiRows[String(el.id).replace('sua-', '')]) bienMat = true;
+        }
+      });
+      if (soMo && !bienMat) return;   // đang sửa, ticket còn nguyên → không vẽ đè, giữ ô nhập
+      renderList(res);
+      if (bienMat) showBox($('boardBox'), 'err', 'Ticket bạn đang mở đã được xử lý nơi khác — danh sách vừa cập nhật lại.');
+    }
+
+    // --- Refresh nền (cache-first): epoch guard + laSaiMaThat, chỉ ghi cache khi THÀNH CÔNG ---
+    function refreshTickets() {
+      if (!mk) return;
+      var eGoi = epoch;
+      goiApi({ api: 'tickets', mk: mk }, function (res) {
+        if (!epochConHieuLuc(eGoi, epoch)) return;   // logout đã xảy ra → vứt, KHÔNG ghi cache
+        nhanCN('cnTicket', false);
+        if (laSaiMaThat(res)) { dangXuatDoiMa(); return; }
+        if (res && res.ok) {
+          phienCache.ticket = { data: res, luc: Date.now() };
+          reconcileTickets(res);
+          capNhatTongQuan();
+          luuSlice('tickets', res);
+        } else { toastChuaCapNhat(); }
+      }, function () {
+        if (!epochConHieuLuc(eGoi, epoch)) return;
+        nhanCN('cnTicket', false);
+        toastChuaCapNhat();
+      });
+    }
+    function refreshHomNay() {
+      if (!mk) return;
+      var eGoi = epoch;
+      goiApi({ api: 'homnay', mk: mk }, function (res) {
+        if (!epochConHieuLuc(eGoi, epoch)) return;
+        if (laSaiMaThat(res)) { dangXuatDoiMa(); return; }
+        if (res && res.ok) {
+          phienCache.homnay = { data: res, luc: Date.now() };
+          if ($('homnay').style.display !== 'none') renderHomNay(res);
+          nhanCN('cnHomNay', false);
+          capNhatTongQuan();
+          luuSlice('homnay', res);
+        }
+        // lỗi khác (khóa 10'/chưa đặt/lỗi hệ thống): giữ cache, tab đang ẩn nên không toast riêng
+      }, function () { /* giữ cache */ });
+    }
+    function refreshSodu() {
+      if (!mk) return;
+      var eGoi = epoch;
+      goiApi({ api: 'sodu', mk: mk }, function (res) {
+        if (!epochConHieuLuc(eGoi, epoch)) return;
+        if (laSaiMaThat(res)) { dangXuatDoiMa(); return; }
+        if (res && res.ok) {
+          var sd = { ds: res.ds || [] };
+          phienCache.sodu = { data: sd, luc: Date.now() };
+          daRefreshSodu = true;   // đã refresh sodu → bỏ nhịp confirm chi trả
+          sdMap = sdMapTu(sd);
+          sdVaThe();
+          capNhatTongQuan();
+          luuSlice('sodu', sd);
+        }
+      }, function () { /* giữ cache */ });
+    }
+
+    // Khôi phục phiên khi mở app: có cache hợp lệ → bỏ màn khóa, vẽ NGAY, refresh nền 3 call song song.
+    function khoiPhucPhien() {
+      var o = docPhien();
+      if (!phienHopLe(o)) return false;
+      mk = o.mk; nhoMay = true;
+      ngayChot = o.ngayChot || '';
+      tenQuan = o.tenQuan || '';
+      daRefreshSodu = false;
+      phienCache.ticket = { data: o.tickets, luc: o.tsTickets || Date.now() };
+      if (o.homnay) phienCache.homnay = { data: o.homnay, luc: o.tsHomnay || Date.now() };
+      if (o.sodu) { phienCache.sodu = { data: o.sodu, luc: o.tsSodu || Date.now() }; sdMap = sdMapTu(o.sodu); }
+      $('lock').style.display = 'none';
+      $('tabs').style.display = 'flex';
+      $('tongquan').style.display = 'grid';
+      $('board').style.display = 'block';
+      renderList(o.tickets);
+      capNhatTongQuan();
+      nhanCacheLuc('cnTicket', phienCache.ticket.luc);
+      // Part C — bắn refresh nền càng sớm càng tốt, 3 call ĐỘC LẬP song song (KHÔNG gộp boot).
+      refreshTickets(); refreshHomNay(); refreshSodu();
+      return true;
+    }
+
     // ===== MỞ KHÓA (v13.1: 'tickets' nhẹ; Tổng quan điền ngầm sau) =====
     function doOpen() {
       var val = $('mk').value.trim();
@@ -525,6 +754,9 @@
           mk = val;
           ngayChot = (res.ngayChot == null) ? '' : res.ngayChot;
           tenQuan = (res.tenQuan == null) ? '' : res.tenQuan;
+          nhoMay = $('nhoMay') ? !!$('nhoMay').checked : false;   // v15 — opt-in "Nhớ máy này"
+          epoch++;   // v15 — mốc phiên mới, vô hiệu call nền của phiên trước (nếu còn lơ lửng)
+          daRefreshSodu = false;   // v15 — phiên mới: bật lại guard chi trả tới khi sodu refresh thật (bịt race carry-over)
           $('lock').style.display = 'none';
           $('tabs').style.display = 'flex';
           $('tongquan').style.display = 'grid';
@@ -532,12 +764,13 @@
           renderList(res);
           phienCache.ticket = { data: res, luc: Date.now() };
           capNhatTongQuan();
+          if (nhoMay) luuPhienDayDu(res);   // v15 — lưu phiên khi bật nhớ máy
           // điền ngầm dải Tổng quan + cache phiên (không chặn login; lỗi thì ô hiện — chờ lượt sau)
           goiApi({ api: 'homnay', mk: mk }, function (r2) {
-            if (r2 && r2.ok) { phienCache.homnay = { data: r2, luc: Date.now() }; capNhatTongQuan(); }
+            if (r2 && r2.ok) { phienCache.homnay = { data: r2, luc: Date.now() }; capNhatTongQuan(); luuSlice('homnay', r2); }
           }, function () {});
           goiApi({ api: 'sodu', mk: mk }, function (r3) {
-            if (r3 && r3.ok) { phienCache.sodu = { data: r3, luc: Date.now() }; capNhatTongQuan(); }
+            if (r3 && r3.ok) { var sd = { ds: r3.ds || [] }; phienCache.sodu = { data: sd, luc: Date.now() }; daRefreshSodu = true; capNhatTongQuan(); luuSlice('sodu', sd); }
           }, function () {});
         } else {
           showBox($('lockBox'), 'err', (res && res.message) ? res.message : 'Không mở được.');
@@ -1301,7 +1534,10 @@
         // server chưa có api 'sodu' → sdMap = {} → khối ẩn, tab Nhân viên vẫn chạy như cũ
         var m = (res && res.ok) ? sdMapTu(res) : {};
         if (res && res.ok) {
-          phienCache.sodu = { data: { ds: res.ds || [] }, luc: Date.now() };
+          var sd = { ds: res.ds || [] };
+          phienCache.sodu = { data: sd, luc: Date.now() };
+          daRefreshSodu = true;        // v15 — đã refresh sodu trong phiên → bỏ nhịp confirm chi trả
+          luuSlice('sodu', sd);        // v15 — persist khi bật nhớ máy
           capNhatTongQuan();
         }
         sdMap = m;
@@ -1358,6 +1594,11 @@
       var gc = elG ? String(elG.value).trim() : '';
       if (gc.length > 200) { showBox($('nvBox'), 'err', 'Ghi chú tối đa 200 ký tự.'); return; }
       if (!window.confirm('Ghi khoản "' + loai + '" cho ' + n.ten + ': ' + vnd(so) + ' đ?\nKhoản này trừ vào tiền còn phải trả của nhân viên.')) return;
+      // v15 (mục 5.5) — số dư đang là bản lưu cũ (chưa refresh sodu trong phiên) → xác nhận thêm 1 nhịp (guard tiền).
+      if (!daRefreshSodu) {
+        var lucSD = phienCache.sodu ? gioHM(phienCache.sodu.luc) : '(chưa có)';
+        if (!window.confirm('Số dư đang là bản lưu lúc ' + lucSD + ', chưa cập nhật mạng — vẫn ghi chi?')) return;
+      }
       nvGoi({ api: 'chitrathem', mk: mk, ten: n.ten, soTien: so, loai: loai, ghiChu: gc }, btn, 'Đã ghi khoản chi trả.', $('nvBox'), function () {
         el.value = ''; if (elG) elG.value = '';
         sdTai();   // số dư đổi → nạp lại (nvlist do nvGoi tự nạp lại)
@@ -1615,6 +1856,9 @@
     }
     window.addEventListener('load', anSplash);
     setTimeout(anSplash, 1200);   // font về trễ cũng không giữ màn chờ quá lâu
+
+    // ===== v15 — khôi phục phiên nếu có (opt-in). Hỏng/không có → rơi êm màn khóa như cũ. =====
+    try { khoiPhucPhien(); } catch (e) { try { xoaPhien(); veManKhoa(); } catch (_) {} }  // hỏng → dọn + rơi êm màn khóa
   </script>
 </body>
 </html>
