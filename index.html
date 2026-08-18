@@ -4,22 +4,22 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Duyệt Tân Niên</title>
-  <meta name="theme-color" content="#1E7A4A">
+  <meta name="theme-color" content="#1A5864">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon-192.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <!-- iOS mở từ màn hình chính dạng app -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Duyệt Tân Niên">
+  <meta name="apple-mobile-web-app-title" content="Tân Niên 2000">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary: #1E7A4A; --primary-dark: #155C37; --cream: #F2C230;
+      --primary: #1A5864; --primary-dark: #134650; --cream: #F5F2E9;  /* theo biển hiệu thật */
       --ok: #456140; --ok-bg: #eaf0e5; --err: #c0392b; --err-bg: #fdecea;
       --warn: #b06a00; --warn-bg: #fdf3e2;
-      --border: #d9dee7; --muted: #6b7280; --bg: #f2f5ef; --card: #ffffff; --radius: 12px;
+      --border: #d9dee7; --muted: #616b78; --bg: #EAF6F4; --card: #ffffff; --radius: 12px;
     }
     * { box-sizing: border-box; }
     html { background: var(--primary); }
@@ -228,7 +228,12 @@
       animation: quay .9s linear infinite;
     }
     @keyframes quay { to { transform: rotate(360deg); } }
-  </style>
+      /* vạch xanh ngọc chân hero — nối tông với biển hiệu + icon app */
+    .hero { position: relative; }
+    .hero::after {
+      content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: #45BFB2;
+    }
+</style>
 </head>
 <body>
   <div class="splash" id="splash">
