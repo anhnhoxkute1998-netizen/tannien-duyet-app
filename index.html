@@ -210,6 +210,11 @@
     .dangcn { font-size: 12px; color: var(--muted); white-space: nowrap; }
     /* ===== v13: ảnh chấm công inline trong thẻ ticket ===== */
     .anh-xem { display: block; margin-top: 8px; max-width: 100%; border-radius: 10px; cursor: pointer; }
+    /* v17 — dải cảnh báo sao lưu: CHỈ hiện khi có vấn đề (quá hạn hoặc lần chạy hỏng) */
+    .sl-canh {
+      display: none; background: var(--err-bg); color: var(--err); border: 1px solid #f5c6c0;
+      border-radius: var(--radius); padding: 9px 12px; font-size: 13.5px; line-height: 1.5; margin-bottom: 10px;
+    }
     /* ===== v13: khu Quản trị cuối tab Nhân viên ===== */
     .qt-nk { margin-top: 6px; }
     .qt-nk .r2 { font-size: 13px; padding: 7px 0; border-top: 1px dashed var(--border); }
@@ -275,6 +280,9 @@
       <button type="button" class="tab" id="tabLuong" onclick="moTab('luong')">Tính lương</button>
       <button type="button" class="tab" id="tabNhanVien" onclick="moTab('nhanvien')">👥 Nhân viên</button>
     </div>
+
+    <!-- v17 — cảnh báo sao lưu (app-first: không dùng email, chủ quán thấy ngay trên app) -->
+    <div id="slCanh" class="sl-canh"></div>
 
     <!-- ===== DẢI TỔNG QUAN (v13) — hiện ở MỌI tab, bấm ô để nhảy tab ===== -->
     <div id="tongquan" class="tq">
@@ -416,7 +424,7 @@
       <div class="field">
         <button type="button" class="btn btn-ghost" onclick="qtBackup(this)">💾 Sao lưu ngay</button>
       </div>
-      <div class="hint">Sao lưu tự động hàng tuần: nhờ đệ/đại ca cài trigger <b>backupTuan</b> trong Apps Script (1 lần).</div>
+      <div class="hint" id="slHint">Sao lưu tự động hàng tuần — đang kiểm tra…</div>
 
       <!-- v15 — đăng xuất / quên máy này: xóa sạch mã + cache đã nhớ trên máy này -->
       <div class="field">
@@ -449,7 +457,7 @@
     // v13 — api ĐỌC được tự thử lại 1 lần khi lỗi mạng; api GHI thì KHÔNG (tránh ghi trùng).
     var API_DOC = {
       bootstrap: 1, tickets: 1, homnay: 1, tinhluong: 1, nvlist: 1, sodu: 1,
-      kydachot: 1, chitralist: 1, nhatky: 1, chitraall: 1, kychotall: 1, anh: 1
+      kydachot: 1, chitralist: 1, nhatky: 1, chitraall: 1, kychotall: 1, anh: 1, saoluu: 1
     };
     function laApiDoc(api) { return API_DOC[String(api == null ? '' : api)] === 1; }
 
@@ -627,6 +635,8 @@
       $('luong').style.display = 'none';
       $('nhanvien').style.display = 'none';
       $('lock').style.display = 'block';
+      var slC = $('slCanh'); if (slC) { slC.style.display = 'none'; slC.textContent = ''; }
+      var slH = $('slHint'); if (slH) slH.textContent = 'Sao lưu tự động hàng tuần — đang kiểm tra…';
       phienCache = { ticket: null, homnay: null, nvlist: null, sodu: null };
       sdMap = null; nvData = null; daRefreshSodu = false;
     }
@@ -718,6 +728,40 @@
     }
 
     // Khôi phục phiên khi mở app: có cache hợp lệ → bỏ màn khóa, vẽ NGAY, refresh nền 3 call song song.
+    // v17 — trạng thái sao lưu: dòng trong khu ⚙️ Quản trị + dải đỏ trên đầu KHI có vấn đề.
+    // Sao lưu hỏng im lặng = mất lịch sử; app là kênh cảnh báo duy nhất (không dùng email).
+    function veSaoLuu(res) {
+      var hint = $('slHint'), canh = $('slCanh');
+      if (!res || !res.ok) {
+        if (hint) hint.textContent = 'Sao lưu tự động hàng tuần — chưa kiểm tra được lúc này.';
+        return;
+      }
+      var chua = !res.ngay;
+      var quaHan = (typeof res.soNgay === 'number') && res.soNgay > 10;
+      var msg = chua ? 'Chưa có bản sao lưu nào'
+                     : ('Sao lưu gần nhất: ' + res.ngay + ' (' + res.soNgay + ' ngày trước)');
+      if (hint) hint.textContent = msg + '. Cần bản mới thì bấm 💾 Sao lưu ngay.';
+      if (!canh) return;
+      if (res.loi) {
+        canh.textContent = '⚠️ Sao lưu tự động đang có vấn đề — ' + res.loi +
+          '. Vào 👥 Nhân viên → ⚙️ Quản trị bấm 💾 Sao lưu ngay.';
+        canh.style.display = 'block';
+      } else if (chua || quaHan) {
+        canh.textContent = '⚠️ ' + msg +
+          ' — sao lưu đang quá hạn, vào 👥 Nhân viên → ⚙️ Quản trị bấm 💾 Sao lưu ngay.';
+        canh.style.display = 'block';
+      } else {
+        canh.style.display = 'none';
+      }
+    }
+    function taiSaoLuu() {
+      if (!mk) return;
+      var ep = epoch;
+      goiApi({ api: 'saoluu', mk: mk }, function (res) {
+        if (epochConHieuLuc(ep, epoch)) veSaoLuu(res);
+      }, function () { if (epochConHieuLuc(ep, epoch)) veSaoLuu(null); });
+    }
+
     function khoiPhucPhien() {
       var o = docPhien();
       if (!phienHopLe(o)) return false;
@@ -736,7 +780,7 @@
       capNhatTongQuan();
       nhanCacheLuc('cnTicket', phienCache.ticket.luc);
       // Part C — bắn refresh nền càng sớm càng tốt, 3 call ĐỘC LẬP song song (KHÔNG gộp boot).
-      refreshTickets(); refreshHomNay(); refreshSodu();
+      refreshTickets(); refreshHomNay(); refreshSodu(); taiSaoLuu();
       return true;
     }
 
@@ -772,6 +816,7 @@
           goiApi({ api: 'sodu', mk: mk }, function (r3) {
             if (r3 && r3.ok) { var sd = { ds: r3.ds || [] }; phienCache.sodu = { data: sd, luc: Date.now() }; daRefreshSodu = true; capNhatTongQuan(); luuSlice('sodu', sd); }
           }, function () {});
+          taiSaoLuu();   // v17 — kiểm trạng thái sao lưu (nền, không chặn login)
         } else {
           showBox($('lockBox'), 'err', (res && res.message) ? res.message : 'Không mở được.');
         }
