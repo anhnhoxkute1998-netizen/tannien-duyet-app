@@ -1344,6 +1344,7 @@
             nvSelectVT('nvxvt-' + i, n.viTri) +
             '<button type="button" class="btn btn-primary btn-sm" onclick="nvLuuViTri(' + i + ', this)">Lưu vị trí</button>' +
             '<button type="button" class="btn btn-ghost btn-sm" onclick="nvResetPin(' + i + ', this)">🔑 Reset PIN</button>' +
+            '<button type="button" class="btn btn-ghost btn-sm" onclick="nvMoKhoa(' + i + ', this)">🔓 Mở khóa PIN</button>' +
             '<button type="button" class="btn btn-ghost btn-sm" onclick="nvDoiActive(' + i + ', this)">' +
               (n.active ? 'Cho nghỉ' : 'Cho làm lại') + '</button>' +
             // v12 — chi trả: ghi khoản ứng/trả lương + xem sổ chi của riêng NV này
@@ -1459,6 +1460,18 @@
       nvGoi({ api: 'nvresetpin', mk: mk, ten: n.ten }, btn, 'Đã cấp PIN mới.', $('nvBox'), function (res) {
         hienPin(n.ten, res.pin);
       });
+    }
+
+    // v17 LỖ 1 — NV nhập sai PIN nhiều lần bị khóa tạm (chấm công 8 lần/2 phút, xem giờ công
+    // 5 lần/10 phút — số thật lấy theo hằng trong Code.gs); chủ quán mở lại ngay trong app.
+    function nvMoKhoa(i, btn) {
+      if (nvBusy) return;
+      var n = nvItem(i);
+      if (!n) return;
+      if (!window.confirm('Mở khóa PIN cho ' + n.ten + '?\n' +
+        'Dùng khi bạn ấy báo nhập sai PIN nhiều lần nên không chấm công / không xem giờ công được.\n' +
+        'PIN KHÔNG đổi — nếu bạn ấy QUÊN PIN thì bấm 🔑 Reset PIN chứ đừng bấm nút này.')) return;
+      nvGoi({ api: 'mokhoapin', mk: mk, ten: n.ten }, btn, 'Đã mở khóa.', $('nvBox'));
     }
 
     function nvDoiActive(i, btn) {
