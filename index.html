@@ -271,6 +271,17 @@
         <button type="button" class="btn btn-primary" id="btnOpen" onclick="doOpen()">Mở trang duyệt</button>
       </div>
       <div id="lockBox" class="box"></div>
+      <!-- v18 — lối thoát khi máy này bị khóa oan; ẩn đi cho khỏi rối màn đăng nhập -->
+      <div class="hint" style="text-align:center;margin-top:14px">
+        <a href="javascript:void(0)" onclick="moMaCuu()" style="color:var(--muted)">Máy này bị khóa?</a>
+      </div>
+      <div id="cuuBox" class="sua" style="display:none">
+        <label class="lbl" for="cuuMa">Mã cứu</label>
+        <input id="cuuMa" type="text" autocomplete="off" placeholder="VD: K7M2PQ4XZ9">
+        <button type="button" class="btn btn-ghost" id="cuuBtn" onclick="guiMaCuu()" style="margin-top:10px">Gửi mã cứu</button>
+        <div id="cuuBox2" class="box"></div>
+        <div class="hint">Lấy mã trong Google Sheet của quán: menu <b>⏱ Chấm công</b> → <b>Gỡ khóa mã duyệt</b>. Mã cứu không thay mã duyệt — nó chỉ báo cho hệ thống biết đây là máy của quán, để người lạ không khóa oan được nữa.</div>
+      </div>
     </div>
 
     <!-- ===== TAB CHUYỂN MÀN (hiện sau khi mở khóa) ===== -->
@@ -472,6 +483,7 @@
     // onOk(res) nhận JSON đã parse; onErr(msg) nhận câu báo lỗi tiếng Việt sẵn để hiện.
     // daThu = true khi đây đã là lần thử lại (không thử lại lần nữa).
     function goiApi(payload, onOk, onErr, daThu) {
+      if (payload && typeof payload === 'object') payload.ve = docVe();   // v18 — kèm vé máy này
       var xong = false;
       var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
       var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 30000);
@@ -550,6 +562,38 @@
 
     $('mk').addEventListener('keydown', function (e) { if (e.key === 'Enter') doOpen(); });
 
+    // v18 — MÃ CỨU: dùng khi máy này bị khóa oan (người lạ bơm mã sai, hoặc vừa đổi mã duyệt).
+    // Lấy mã trong Sheet: menu ⏱ Chấm công → "Gỡ khóa mã duyệt". Mã cứu KHÔNG cho vào app,
+    // nó chỉ ghi nhận máy này là máy tin cậy để có ô đếm riêng.
+    function moMaCuu() {
+      var el = $('cuuBox');
+      if (!el) return;
+      el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+      if (el.style.display === 'block') $('cuuMa').focus();
+    }
+    function guiMaCuu() {
+      var v = $('cuuMa').value.trim();
+      if (!v) { showBox($('cuuBox2'), 'err', 'Nhập mã cứu lấy từ Sheet.'); return; }
+      var btn = $('cuuBtn');
+      btn.disabled = true; btn.textContent = 'Đang gửi...';
+      goiApi({ api: 'macuu', maCuu: v }, function (res) {
+        btn.disabled = false; btn.textContent = 'Gửi mã cứu';
+        if (res && res.ok) {
+          $('cuuBox').style.display = 'none';
+          $('cuuMa').value = '';
+          hideBox($('cuuBox2'));
+          showBox($('lockBox'), 'ok', res.message || 'Xong — giờ nhập mã duyệt.');
+          $('mk').focus();
+        } else {
+          // báo NGAY dưới ô nhập — hộp lockBox nằm phía trên, gõ sai sẽ không thấy gì
+          showBox($('cuuBox2'), 'err', (res && res.message) ? res.message : 'Không dùng được mã cứu.');
+        }
+      }, function (msg) {
+        btn.disabled = false; btn.textContent = 'Gửi mã cứu';
+        showBox($('cuuBox2'), 'err', msg);
+      });
+    }
+
     // ===== v15 — NHỚ PHIÊN (localStorage) + refresh nền cache-first =====
     // Chỉ ghi cache khi bật "Nhớ máy này"; mã nằm trên máy (đánh đổi bảo mật đã chốt ở spec).
     var CACHE_KEY = 'cc_TN_v1';   // namespace theo quán + version
@@ -559,6 +603,34 @@
       return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
     }
     function gioHMNow() { return gioHM(Date.now()); }
+
+    // v18 — VÉ THIẾT BỊ: chuỗi ngẫu nhiên do CHÍNH MÁY NÀY sinh, gửi kèm mọi lệnh gọi.
+    // Server ghi nhận nó khi mình nhập đúng mã, rồi từ đó đếm sai mã theo máy — người lạ
+    // bơm mã sai không khóa oan được máy này nữa.
+    // Vé KHÔNG thay mã (vẫn phải nhập mã mới vào được app) nên lưu độc lập với "Nhớ máy này".
+    // Máy tự sinh chứ không đợi server cấp: mở app bắn nhiều lệnh song song, server cấp thì
+    // thành mấy vé cho cùng một máy và đá vé máy khác ra.
+    var VE_KEY = CACHE_KEY + '_ve';
+    function sinhVe() {
+      try {
+        var a = new Uint8Array(16);
+        (window.crypto || window.msCrypto).getRandomValues(a);
+        var s = '';
+        for (var i = 0; i < a.length; i++) s += ('0' + a[i].toString(16)).slice(-2);
+        return s;
+      } catch (e) {
+        var t = '';
+        for (var j = 0; j < 8; j++) t += ('0000' + Math.floor(Math.random() * 65536).toString(16)).slice(-4);
+        return t;
+      }
+    }
+    function docVe() {
+      try {
+        var v = localStorage.getItem(VE_KEY);
+        if (!/^[0-9a-f]{32,64}$/.test(String(v || ''))) { v = sinhVe(); localStorage.setItem(VE_KEY, v); }
+        return v;
+      } catch (e) { return ''; }
+    }
 
     // --- Đọc/ghi localStorage: bọc try/catch, không bao giờ ném ra ngoài ---
     function docPhien() {
