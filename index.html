@@ -1057,7 +1057,7 @@
         else loadList(true);       // trạng thái lệch (ticket đã xử lý nơi khác...) → đồng bộ lại, GIỮ câu báo
       }, function (msg) {
         lockActs(false);
-        showBox($('boardBox'), 'err', msg);
+        showBox($('boardBox'), 'err', msg + ' CHƯA RÕ máy đã kịp xử lý hay chưa — danh sách vừa tải lại, nếu ticket không còn trong đó thì máy đã làm xong rồi. Đừng thêm dòng tay vào Sheet khi chưa kiểm, dễ thành trả dư giờ.');
         loadList(true);
       });
     }
@@ -1097,7 +1097,7 @@
         if (ok) removeCard(btn); else loadList(true);
       }, function (msg) {
         lockActs(false); btn.textContent = 'Duyệt với giờ này';
-        showBox($('boardBox'), 'err', msg);
+        showBox($('boardBox'), 'err', msg + ' CHƯA RÕ máy đã kịp xử lý hay chưa — danh sách vừa tải lại, nếu ticket không còn trong đó thì máy đã làm xong rồi. Đừng thêm dòng tay vào Sheet khi chưa kiểm, dễ thành trả dư giờ.');
         loadList(true);
       });
     }
