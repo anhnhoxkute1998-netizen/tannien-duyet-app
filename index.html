@@ -898,19 +898,19 @@
       });
     }
 
-    function loadList() {
+    function loadList(giuBao) {
       if (!mk || busy) return;
-      hideBox($('boardBox'));
+      if (!giuBao) hideBox($('boardBox'));   // giuBao = giữ câu báo lỗi vừa hiện, đừng xóa
       goiApi({ api: 'tickets', mk: mk }, function (res) {
         nhanCN('cnTicket', false);
         if (res && res.ok) {
           phienCache.ticket = { data: res, luc: Date.now() };   // v13 — cache phiên
           renderList(res);
           capNhatTongQuan();
-        } else showBox($('boardBox'), 'err', (res && res.message) ? res.message : 'Không tải được.');
+        } else if (!giuBao) showBox($('boardBox'), 'err', (res && res.message) ? res.message : 'Không tải được.');
       }, function (msg) {
         nhanCN('cnTicket', false);
-        showBox($('boardBox'), 'err', msg);
+        if (!giuBao) showBox($('boardBox'), 'err', msg);   // đang giữ câu báo của lệnh duyệt → đừng đè lên
       });
     }
 
@@ -1054,11 +1054,11 @@
         var ok = !!(res && res.ok);
         showBox($('boardBox'), ok ? 'ok' : 'err', (res && res.message) ? res.message : 'Không rõ kết quả.');
         if (ok) removeCard(btn);   // xóa tại chỗ, KHÔNG tải lại toàn bộ (bỏ 1 vòng gọi server)
-        else loadList();           // trạng thái lệch (ticket đã xử lý nơi khác...) → đồng bộ lại cho chắc
+        else loadList(true);       // trạng thái lệch (ticket đã xử lý nơi khác...) → đồng bộ lại, GIỮ câu báo
       }, function (msg) {
         lockActs(false);
         showBox($('boardBox'), 'err', msg);
-        loadList();
+        loadList(true);
       });
     }
 
@@ -1094,11 +1094,11 @@
         lockActs(false); btn.textContent = 'Duyệt với giờ này';
         var ok = !!(res && res.ok);
         showBox($('boardBox'), ok ? 'ok' : 'err', (res && res.message) ? res.message : 'Không rõ kết quả.');
-        if (ok) removeCard(btn); else loadList();
+        if (ok) removeCard(btn); else loadList(true);
       }, function (msg) {
         lockActs(false); btn.textContent = 'Duyệt với giờ này';
         showBox($('boardBox'), 'err', msg);
-        loadList();
+        loadList(true);
       });
     }
 
